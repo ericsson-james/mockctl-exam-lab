@@ -124,6 +124,9 @@ main { flex: 1; display: flex; min-height: 0; }
 .modal-title { color: var(--teal); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
 .modal h1 { margin: 0 0 4px; font-size: 26px; }
 .modal .dim { color: var(--dim); font-size: 13px; }
+.mobile-modal { max-width: 440px; font-size: 15px; line-height: 1.5; }
+.mobile-modal p { margin: 10px 0; }
+.mobile-modal button { margin-top: 8px; width: 100%; padding: 10px; font-size: 15px; }
 .modal table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13.5px; }
 .modal th { text-align: left; color: var(--dim); font-weight: 500; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; padding: 6px 8px; border-bottom: 1px solid var(--line); }
 .modal td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }

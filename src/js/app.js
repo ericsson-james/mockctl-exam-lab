@@ -22,8 +22,38 @@ class App {
     });
   }
 
+  /* A phone is a poor place for a terminal. Coarse pointer plus a narrow screen,
+     or a mobile user agent; tablets in landscape with a keyboard pass through. */
+  looksLikeMobile() {
+    try {
+      const coarse = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+      const narrow = Math.min(window.innerWidth, window.innerHeight) < 768;
+      const ua = /Mobi|Android|iPhone|iPod/i.test(navigator.userAgent || '');
+      return (coarse && narrow) || ua;
+    } catch (e) { return false; }
+  }
+
+  /* Show the desktop notice once per tab session; resolves when dismissed. */
+  mobileGate() {
+    const KEY = 'mockctlMobileOk';
+    let dismissed = false;
+    try { dismissed = sessionStorage.getItem(KEY) === '1'; } catch (e) { /* storage unavailable */ }
+    if (dismissed || !this.looksLikeMobile()) return Promise.resolve();
+    const overlay = document.getElementById('mobileOverlay');
+    const btn = document.getElementById('mobileContinue');
+    overlay.hidden = false;
+    return new Promise((resolve) => {
+      btn.addEventListener('click', () => {
+        overlay.hidden = true;
+        try { sessionStorage.setItem(KEY, '1'); } catch (e) { /* ignore */ }
+        resolve();
+      }, { once: true });
+    });
+  }
+
   async start() {
     const term = this.term;
+    await this.mobileGate();
     term.print('mockctl exam lab — CKA / CKS practice environment', 'amber');
     term.printHtml('<span class="dim">Simulated clusters, nodes, and tooling. Runs entirely in your browser; no network calls. Independent, unofficial project that is not affiliated with The Linux Foundation or CNCF. For changes, corrections, or other recommendations please reach out to <a href="https://www.linkedin.com/in/james-ericsson/" target="_blank" rel="noopener noreferrer">James Ericsson</a>.</span>');
     term.print('');
