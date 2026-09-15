@@ -55,7 +55,7 @@ class App {
     const term = this.term;
     await this.mobileGate();
     term.print('mockctl exam lab — CKA / CKS practice environment', 'amber');
-    term.printHtml('<span class="dim">Simulated clusters, nodes, and tooling. Runs entirely in your browser; no network calls. Independent, unofficial project that is not affiliated with The Linux Foundation or CNCF. For changes, corrections, or other recommendations please reach out to <a href="https://www.linkedin.com/in/james-ericsson/" target="_blank" rel="noopener noreferrer">James Ericsson</a>. Source: <a href="https://github.com/ericsson-james/mockctl-exam-lab" target="_blank" rel="noopener noreferrer">github.com/ericsson-james/mockctl-exam-lab</a>.</span>');
+    term.printHtml('<span class="dim">Simulated clusters, nodes, and tooling. Runs entirely in your browser; no network calls. Independent, <a href="https://github.com/ericsson-james/mockctl-exam-lab" target="_blank" rel="noopener noreferrer">unofficial project</a> that is not affiliated with The Linux Foundation or CNCF. For changes, corrections, or other recommendations please reach out to <a href="https://www.linkedin.com/in/james-ericsson/" target="_blank" rel="noopener noreferrer">James Ericsson</a>.</span>');
     term.print('');
     const hash = decodeURIComponent((location.hash || '').replace(/^#/, ''));
     let cfg = hash ? this.examByRef(hash) : null;
