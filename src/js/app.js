@@ -26,7 +26,7 @@ class App {
     const term = this.term;
     term.print('mockctl exam lab — CKA / CKS practice environment', 'amber');
     term.print('Simulated clusters, nodes, and tooling. Runs entirely in your browser; no network calls.', 'dim');
-    term.printHtml('<span class="dim">Independent, unofficial project — not affiliated with The Linux Foundation or CNCF. Source: <a href="https://github.com/ericsson-james/mockctl-exam-lab" target="_blank" rel="noopener noreferrer">github.com/ericsson-james/mockctl-exam-lab</a></span>');
+    term.print('Independent, unofficial project — not affiliated with The Linux Foundation or CNCF.', 'dim');
     term.print('');
     const hash = decodeURIComponent((location.hash || '').replace(/^#/, ''));
     let cfg = hash ? this.examByRef(hash) : null;

@@ -37,8 +37,8 @@ npm run deploy    # build + publish dist/ to Cloudflare Workers (run `npx wrangl
 No runtime dependencies; the one dev dependency is `wrangler`, used only to
 deploy. `build.mjs` embeds `exams/*.json` and concatenates `src/js`
 into one self-contained page: `dist/index.html`. The included GitHub Actions
-workflow publishes that page to GitHub Pages on every push to `main`
-(enable Pages with source "GitHub Actions" once in the repository settings).
+workflow can publish that page to GitHub Pages (manual trigger; enable Pages
+with source "GitHub Actions" once in the repository settings).
 `wrangler.jsonc` publishes the same `dist/` to Cloudflare Workers as static
 assets, at `mockctl-exam-lab.<your-subdomain>.workers.dev` or a custom domain.
 

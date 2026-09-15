@@ -1,9 +1,11 @@
-# Builds the single-file app and publishes dist/ to GitHub Pages on every push to main.
-# Enable Pages in the repository settings (Source: GitHub Actions) once.
+# Builds the single-file app and publishes dist/ to GitHub Pages. Manual trigger only:
+# Pages is unavailable while the repository is private (the site is served from
+# Cloudflare, see wrangler.jsonc). To publish on every push again, add back:
+#   push:
+#     branches: [main]
+# and enable Pages in the repository settings (Source: GitHub Actions) once.
 name: Deploy to GitHub Pages
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
