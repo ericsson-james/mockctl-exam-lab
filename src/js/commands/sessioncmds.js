@@ -45,6 +45,7 @@ registry.register({
     io.out('questions; each one names the kubectl context to use. Everything here is');
     io.out('simulated in your browser — no real clusters, no network calls.');
     io.out('Independent, unofficial project; not affiliated with The Linux Foundation or CNCF.');
+    io.out('Source and issues: https://github.com/ericsson-james/mockctl-exam-lab');
     io.out('');
     io.out('Clusters', 'teal');
     io.out('    kubectl config get-contexts        the clusters you have access to');

@@ -1,5 +1,8 @@
 # mockctl exam lab
 
+**Live at [mockctl.com](https://mockctl.com/).** Source, issues and pull requests:
+[github.com/ericsson-james/mockctl-exam-lab](https://github.com/ericsson-james/mockctl-exam-lab).
+
 A free, browser-only practice environment modeled on the format of the CKA
 and CKS exams: a terminal on a base host, `kubectl` against simulated multi-node
 clusters, `ssh` into control-plane and worker nodes for `etcdctl` / `kubeadm` /
