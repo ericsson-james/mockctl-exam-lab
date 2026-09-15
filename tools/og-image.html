@@ -1,0 +1,34 @@
+<!doctype html>
+<!-- Source for static/og.png (1200x630). Re-render with:
+     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless=new --disable-gpu --hide-scrollbars \
+       --window-size=1200,630 --screenshot=static/og.png "file://$PWD/tools/og-image.html" -->
+<html lang="en"><head><meta charset="utf-8"><style>
+html, body { margin: 0; width: 1200px; height: 630px; background: #16130f; color: #e6dac3; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow: hidden; }
+.wrap { display: flex; height: 630px; box-sizing: border-box; padding: 60px 64px; gap: 44px; align-items: center; }
+.left { flex: 1; min-width: 0; }
+.brand { color: #e2a54a; font-weight: 700; font-size: 60px; line-height: 1.05; letter-spacing: -0.01em; }
+.tag { margin-top: 24px; font-size: 25px; line-height: 1.4; }
+.sub { margin-top: 22px; font-size: 17px; line-height: 1.55; color: #8a7d68; }
+.url { margin-top: 30px; font-size: 22px; color: #7fbfae; }
+.term { flex: 0 0 500px; background: #1e1a15; border: 1px solid #2c2620; border-radius: 10px; padding: 20px 24px 24px; font-size: 16px; line-height: 1.65; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+.dots { display: flex; gap: 8px; margin-bottom: 12px; } .dots i { width: 11px; height: 11px; border-radius: 50%; background: #2c2620; display: block; }
+pre { margin: 0; white-space: pre; }
+.p { color: #e2a54a; } .d { color: #8a7d68; } .t { color: #7fbfae; } .e { color: #e07856; }
+</style></head><body><div class="wrap">
+<div class="left">
+  <div class="brand">mockctl<br>exam lab</div>
+  <div class="tag">Free, browser-only practice lab in the CKA and CKS exam format.</div>
+  <div class="sub">Simulated clusters, kubectl, node and security tooling, timed tasks, instant grading. Unofficial; not affiliated with The Linux Foundation or CNCF.</div>
+  <div class="url">mockctl.com</div>
+</div>
+<div class="term"><div class="dots"><i></i><i></i><i></i></div><pre><span class="p">candidate@cka-base:~$</span> kubectl get nodes
+NAME          STATUS     ROLES           VERSION
+cka-control   Ready      control-plane   v1.31.0
+cka-node1     Ready      &lt;none&gt;          v1.31.0
+cka-node2     <span class="e">NotReady</span>   &lt;none&gt;          v1.31.0
+<span class="p">candidate@cka-base:~$</span> ssh cka-node2
+<span class="p">candidate@cka-node2:~$</span> sudo systemctl start kubelet
+<span class="p">candidate@cka-node2:~$</span> exit
+<span class="p">candidate@cka-base:~$</span> exam check 7
+<span class="t">Question 7: PASS</span>  <span class="d">(Fix a NotReady node)</span></pre></div>
+</div></body></html>

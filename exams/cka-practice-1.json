@@ -1,0 +1,1360 @@
+{
+  "uuid": "c0a80101-0000-4000-8000-0000000c4a01",
+  "name": "Unofficial CKA Practice Exam 1",
+  "exam": "CKA",
+  "durationMinutes": 120,
+  "passPercent": 66,
+  "candidate": "candidate",
+  "clientVersion": "1.31.0",
+  "base": {
+    "hostname": "cka-base",
+    "ip": "10.0.0.5",
+    "files": {
+      "/opt/answers/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/opt/course/": null,
+      "/opt/course/README.txt": "Answer files for some questions go under /opt/answers/ on this host.\n"
+    },
+    "homeFiles": {
+      "README.txt": "You are on the exam base host. Use the question panel on the left.\nEach question names the context to use: kubectl config use-context <name>\nNodes can be reached with: ssh <node-name>   (then: sudo -i)\n"
+    }
+  },
+  "contexts": {
+    "k8s": {
+      "cluster": "k8s",
+      "namespace": "default"
+    },
+    "k8s-ops": {
+      "cluster": "k8s-ops",
+      "namespace": "default"
+    }
+  },
+  "defaultContext": "k8s",
+  "clusters": {
+    "k8s": {
+      "version": "1.31.0",
+      "ageDays": 45,
+      "nodes": [
+        {
+          "name": "cka-control",
+          "roles": [
+            "control-plane"
+          ],
+          "ip": "10.0.0.11"
+        },
+        {
+          "name": "cka-node1",
+          "ip": "10.0.0.12",
+          "labels": {
+            "disk": "ssd"
+          }
+        },
+        {
+          "name": "cka-node2",
+          "ip": "10.0.0.13"
+        }
+      ],
+      "resources": [
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "backend"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "db"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "apps"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "monitoring"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "www"
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "api",
+            "namespace": "backend",
+            "labels": {
+              "app": "api"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "api"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "api"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "httpd",
+                    "image": "httpd:2.4",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "db",
+            "namespace": "db",
+            "labels": {
+              "app": "db"
+            }
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "db"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "db"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "redis",
+                    "image": "redis:7.2",
+                    "ports": [
+                      {
+                        "containerPort": 6379
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "db",
+            "namespace": "db"
+          },
+          "spec": {
+            "selector": {
+              "app": "db"
+            },
+            "ports": [
+              {
+                "port": 6379,
+                "targetPort": 6379
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "api-client",
+            "namespace": "db",
+            "labels": {
+              "role": "api"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "client",
+                "image": "busybox:1.36",
+                "command": [
+                  "sleep",
+                  "3600"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "intruder",
+            "namespace": "db",
+            "labels": {
+              "role": "web"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "client",
+                "image": "busybox:1.36",
+                "command": [
+                  "sleep",
+                  "3600"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "prometheus",
+            "namespace": "monitoring",
+            "labels": {
+              "app": "prometheus"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "prometheus",
+                "image": "quay.io/prometheus/prometheus:v2.53.0"
+              }
+            ]
+          },
+          "_sim": {
+            "cpu": 88,
+            "memory": 310
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "log-shipper",
+            "namespace": "monitoring",
+            "labels": {
+              "app": "log-shipper"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "fluent-bit",
+                "image": "docker.io/fluent/fluent-bit:3.1"
+              }
+            ]
+          },
+          "_sim": {
+            "cpu": 212,
+            "memory": 96
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "alertmanager",
+            "namespace": "monitoring",
+            "labels": {
+              "app": "alertmanager"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "alertmanager",
+                "image": "quay.io/prometheus/alertmanager:v0.27.0"
+              }
+            ]
+          },
+          "_sim": {
+            "cpu": 15,
+            "memory": 40
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "node-exporter",
+            "namespace": "monitoring",
+            "labels": {
+              "app": "node-exporter"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "node-exporter",
+                "image": "quay.io/prometheus/node-exporter:v1.8.2"
+              }
+            ]
+          },
+          "_sim": {
+            "cpu": 41,
+            "memory": 22
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "www",
+            "namespace": "www",
+            "labels": {
+              "app": "www"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "www"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "www"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "nginx",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "www",
+            "namespace": "www"
+          },
+          "spec": {
+            "selector": {
+              "app": "www"
+            },
+            "ports": [
+              {
+                "port": 80,
+                "targetPort": 80
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "k8s-ops": {
+      "version": "1.31.0",
+      "ageDays": 20,
+      "upgradeVersions": [
+        "1.31.1",
+        "1.31.2"
+      ],
+      "nodes": [
+        {
+          "name": "ops-control",
+          "roles": [
+            "control-plane"
+          ],
+          "ip": "10.0.0.21"
+        },
+        {
+          "name": "ops-node1",
+          "ip": "10.0.0.22"
+        },
+        {
+          "name": "ops-node2",
+          "ip": "10.0.0.23"
+        }
+      ],
+      "resources": [
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "shop"
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "checkout",
+            "namespace": "shop",
+            "labels": {
+              "app": "checkout"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "checkout"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "checkout"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "nginx",
+                    "image": "nginx:1.27-alpne",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "orders",
+            "namespace": "shop",
+            "labels": {
+              "app": "orders"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "orders"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "orders"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "nginx",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "orders-svc",
+            "namespace": "shop"
+          },
+          "spec": {
+            "selector": {
+              "app": "order"
+            },
+            "ports": [
+              {
+                "port": 80,
+                "targetPort": 80
+              }
+            ]
+          }
+        }
+      ],
+      "hosts": {
+        "ops-node2": {
+          "services": {
+            "kubelet": {
+              "active": false,
+              "journal": [
+                "I0901 08:12:03.114215    1123 kubelet.go:1622] \"Node became ready\" node=\"ops-node2\"",
+                "Stopping kubelet.service - kubelet: The Kubernetes Node Agent...",
+                "kubelet.service: Deactivated successfully."
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "questions": [
+    {
+      "title": "Create a Deployment",
+      "domain": "Workloads & Scheduling",
+      "weight": 4,
+      "context": "k8s",
+      "text": "Create a new namespace named `frontend`.\n\nIn that namespace, create a Deployment named `web` with image `nginx:1.27`, exposing container port `80`, running `3` replicas.\n\nAll replicas should be running when you are done.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "namespace",
+          "name": "frontend",
+          "hint": "namespace frontend does not exist"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "deployment",
+          "namespace": "frontend",
+          "name": "web",
+          "assert": {
+            "spec.replicas": 3,
+            "spec.template.spec.containers[0].image": "nginx:1.27",
+            "spec.template.spec.containers[0].ports": {
+              "anyMatch": {
+                "containerPort": 80
+              }
+            }
+          },
+          "hint": "deployment web in frontend must have 3 replicas, image nginx:1.27 and container port 80"
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "k8s",
+          "namespace": "frontend",
+          "name": "web",
+          "hint": "not all replicas of web are available"
+        }
+      ],
+      "solution": "Imperative commands are fastest here:\n\n    kubectl create namespace frontend\n    kubectl create deployment web --image=nginx:1.27 --replicas=3 --port=80 -n frontend\n    kubectl -n frontend rollout status deployment web\n\n`--port` adds the containerPort to the pod template. That is the whole task.\n\n**Alternative, if you prefer to work from YAML** (a habit that pays off on harder questions): generate the manifest with `$do` (`--dry-run=client -o yaml`), review or edit it, then apply it. The file only exists after the first command writes it:\n\n    kubectl create deployment web --image=nginx:1.27 --replicas=3 --port=80 -n frontend $do > web.yaml\n    vim web.yaml\n    kubectl apply -f web.yaml",
+      "references": [
+        {
+          "title": "Deployments (concepts)",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/"
+        },
+        {
+          "title": "kubectl create deployment",
+          "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_deployment/"
+        }
+      ]
+    },
+    {
+      "title": "Scale a Deployment",
+      "domain": "Workloads & Scheduling",
+      "weight": 4,
+      "context": "k8s",
+      "text": "The Deployment `api` in namespace `backend` currently runs 2 replicas.\n\nScale it to `5` replicas.",
+      "checks": [
+        {
+          "type": "deploymentAvailable",
+          "cluster": "k8s",
+          "namespace": "backend",
+          "name": "api",
+          "replicas": 5,
+          "hint": "deployment api should have 5 available replicas"
+        }
+      ],
+      "solution": "    kubectl scale deployment api -n backend --replicas=5\n    kubectl -n backend get deployment api\n\nScaling only changes `spec.replicas`; the ReplicaSet controller creates the extra pods. `kubectl edit deployment api -n backend` and changing `replicas` works too.",
+      "references": [
+        {
+          "title": "Scaling a Deployment",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#scaling-a-deployment"
+        }
+      ]
+    },
+    {
+      "title": "Multi-container Pod",
+      "domain": "Workloads & Scheduling",
+      "weight": 5,
+      "context": "k8s",
+      "text": "Create a Pod named `multi` in namespace `default` with two containers:\n\n- a container named `web` using image `nginx:1.27`\n- a container named `sidecar` using image `busybox:1.36` running the command `sleep 3600`\n\nBoth containers must be running.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "multi",
+          "assert": {
+            "spec.containers": {
+              "length": 2
+            }
+          },
+          "hint": "pod multi must have exactly two containers"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "multi",
+          "assert": {
+            "spec.containers": {
+              "anyMatch": {
+                "name": "web",
+                "image": "nginx:1.27"
+              }
+            }
+          },
+          "hint": "container web with image nginx:1.27 is missing"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "multi",
+          "assert": {
+            "spec.containers": {
+              "anyMatch": {
+                "name": "sidecar",
+                "image": "busybox:1.36"
+              }
+            }
+          },
+          "hint": "container sidecar with image busybox:1.36 is missing"
+        },
+        {
+          "type": "podsReady",
+          "cluster": "k8s",
+          "namespace": "default",
+          "name": "multi",
+          "hint": "pod multi is not running with all containers ready"
+        }
+      ],
+      "solution": "Generate a skeleton, then add the second container in vim:\n\n    kubectl run multi --image=nginx:1.27 $do > multi.yaml\n    vim multi.yaml\n\nMake the containers list look like this (the first container is renamed to `web`):\n\n    spec:\n      containers:\n      - name: web\n        image: nginx:1.27\n      - name: sidecar\n        image: busybox:1.36\n        command: [\"sleep\", \"3600\"]\n\nThen `kubectl apply -f multi.yaml` and confirm `2/2` in `kubectl get pod multi`.",
+      "references": [
+        {
+          "title": "Pods with multiple containers",
+          "url": "https://kubernetes.io/docs/concepts/workloads/pods/#how-pods-manage-multiple-containers"
+        },
+        {
+          "title": "Define a command for a container",
+          "url": "https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/"
+        }
+      ]
+    },
+    {
+      "title": "Schedule with a node selector",
+      "domain": "Workloads & Scheduling",
+      "weight": 4,
+      "context": "k8s",
+      "text": "One of the worker nodes carries the label `disk=ssd`.\n\nCreate a Pod named `ssd-pod` in namespace `default` with image `nginx:1.27` that is scheduled **only** onto a node with that label, using a node selector. The Pod must be running.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "ssd-pod",
+          "assert": {
+            "spec.nodeSelector.disk": "ssd",
+            "spec.containers[0].image": "nginx:1.27"
+          },
+          "hint": "ssd-pod must use nodeSelector disk=ssd and image nginx:1.27"
+        },
+        {
+          "type": "podOnNode",
+          "cluster": "k8s",
+          "namespace": "default",
+          "name": "ssd-pod",
+          "nodeLabel": {
+            "disk": "ssd"
+          },
+          "hint": "ssd-pod is not running on the disk=ssd node"
+        }
+      ],
+      "solution": "Find the node first, then place the pod with `nodeSelector`:\n\n    kubectl get nodes -l disk=ssd\n    kubectl run ssd-pod --image=nginx:1.27 $do > ssd-pod.yaml\n    vim ssd-pod.yaml      # add under spec:\n    #   nodeSelector:\n    #     disk: ssd\n    kubectl apply -f ssd-pod.yaml\n    kubectl get pod ssd-pod -o wide\n\n`nodeSelector` is the simplest form of node affinity: the scheduler only considers nodes whose labels include every key/value listed.",
+      "references": [
+        {
+          "title": "Assigning Pods to Nodes — nodeSelector",
+          "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#nodeselector"
+        }
+      ]
+    },
+    {
+      "title": "Taints and tolerations",
+      "domain": "Workloads & Scheduling",
+      "weight": 5,
+      "context": "k8s",
+      "text": "Taint node `cka-node2` with key `env`, value `prod` and effect `NoSchedule`.\n\nThen create a Pod named `prod-pod` in namespace `default` with image `nginx:1.27` that tolerates this taint and runs on `cka-node2`. (Use a node selector or `nodeName` to place it there.)",
+      "checks": [
+        {
+          "type": "nodeTaint",
+          "cluster": "k8s",
+          "node": "cka-node2",
+          "key": "env",
+          "value": "prod",
+          "effect": "NoSchedule",
+          "hint": "node cka-node2 must carry taint env=prod:NoSchedule"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "prod-pod",
+          "assert": {
+            "spec.tolerations": {
+              "anyMatch": {
+                "key": "env",
+                "effect": "NoSchedule"
+              }
+            }
+          },
+          "hint": "prod-pod needs a toleration for key env with effect NoSchedule"
+        },
+        {
+          "type": "podOnNode",
+          "cluster": "k8s",
+          "namespace": "default",
+          "name": "prod-pod",
+          "node": "cka-node2",
+          "hint": "prod-pod is not running on cka-node2"
+        }
+      ],
+      "solution": "    kubectl taint nodes cka-node2 env=prod:NoSchedule\n    kubectl describe node cka-node2 | grep -A2 Taints\n\nThen a pod that tolerates the taint and is pinned to the node:\n\n    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: prod-pod\n    spec:\n      nodeName: cka-node2\n      tolerations:\n      - key: env\n        operator: Equal\n        value: prod\n        effect: NoSchedule\n      containers:\n      - name: nginx\n        image: nginx:1.27\n\nA toleration only *allows* scheduling onto the tainted node; it does not force it. `nodeName` (or a `nodeSelector` on `kubernetes.io/hostname: cka-node2`) is what pins the pod. Remove a taint later with a trailing dash: `kubectl taint nodes cka-node2 env=prod:NoSchedule-`.",
+      "references": [
+        {
+          "title": "Taints and Tolerations",
+          "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/"
+        }
+      ]
+    },
+    {
+      "title": "Expose a Deployment",
+      "domain": "Services & Networking",
+      "weight": 4,
+      "context": "k8s",
+      "text": "Expose the Deployment `api` in namespace `backend` with a Service named `api-svc` of type `ClusterIP`.\n\nThe Service must listen on port `8080` and forward to the container port `80`.\n\nVerify that the Service has endpoints.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "service",
+          "namespace": "backend",
+          "name": "api-svc",
+          "assert": {
+            "spec.type": "ClusterIP",
+            "spec.ports[0].port": 8080,
+            "spec.ports[0].targetPort": 80,
+            "spec.selector.app": "api"
+          },
+          "hint": "api-svc must be ClusterIP, port 8080 -> targetPort 80, selecting app=api"
+        },
+        {
+          "type": "serviceEndpoints",
+          "cluster": "k8s",
+          "namespace": "backend",
+          "name": "api-svc",
+          "hint": "api-svc has no endpoints"
+        }
+      ],
+      "solution": "    kubectl expose deployment api -n backend --name=api-svc --port=8080 --target-port=80 --type=ClusterIP\n    kubectl -n backend get endpoints api-svc\n\n`expose` copies the Deployment's selector (`app=api`) into the Service. Endpoints only appear for pods that match the selector **and** are Ready — an empty ENDPOINTS column almost always means a selector/label mismatch.",
+      "references": [
+        {
+          "title": "Service (concepts)",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/service/"
+        },
+        {
+          "title": "kubectl expose",
+          "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_expose/"
+        }
+      ]
+    },
+    {
+      "title": "NetworkPolicy",
+      "domain": "Services & Networking",
+      "weight": 7,
+      "context": "k8s",
+      "text": "In namespace `db` there is a Deployment `db` (pods labelled `app=db`) listening on TCP port `6379`.\n\nCreate a NetworkPolicy named `allow-api-to-db` in namespace `db` so that pods labelled `app=db` accept **ingress** traffic on TCP port `6379` **only** from pods in the same namespace labelled `role=api`. All other ingress to those pods must be denied.\n\nYou can verify with `kubectl exec api-client -n db -- nc -zv db 6379` style checks (the pods `api-client` and `intruder` exist for testing).",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "networkpolicy",
+          "namespace": "db",
+          "name": "allow-api-to-db",
+          "assert": {
+            "spec.podSelector.matchLabels.app": "db",
+            "spec.policyTypes": {
+              "contains": "Ingress"
+            }
+          },
+          "hint": "allow-api-to-db must select app=db and be an Ingress policy"
+        },
+        {
+          "type": "connectivity",
+          "cluster": "k8s",
+          "from": {
+            "namespace": "db",
+            "selector": "role=api"
+          },
+          "to": {
+            "namespace": "db",
+            "selector": "app=db"
+          },
+          "port": 6379,
+          "expect": true,
+          "hint": "pods with role=api must be able to reach app=db on 6379"
+        },
+        {
+          "type": "connectivity",
+          "cluster": "k8s",
+          "from": {
+            "namespace": "db",
+            "selector": "role=web"
+          },
+          "to": {
+            "namespace": "db",
+            "selector": "app=db"
+          },
+          "port": 6379,
+          "expect": false,
+          "hint": "pods without role=api must be blocked from app=db"
+        }
+      ],
+      "solution": "    apiVersion: networking.k8s.io/v1\n    kind: NetworkPolicy\n    metadata:\n      name: allow-api-to-db\n      namespace: db\n    spec:\n      podSelector:\n        matchLabels:\n          app: db\n      policyTypes:\n      - Ingress\n      ingress:\n      - from:\n        - podSelector:\n            matchLabels:\n              role: api\n        ports:\n        - protocol: TCP\n          port: 6379\n\nOnce any policy selects a pod for Ingress, everything not explicitly allowed is denied — that is what makes `intruder` fail. Verify from both test pods:\n\n    kubectl -n db exec api-client -- wget -qO- --timeout=2 db:6379   # works\n    kubectl -n db exec intruder   -- wget -qO- --timeout=2 db:6379   # times out",
+      "references": [
+        {
+          "title": "Network Policies",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/"
+        },
+        {
+          "title": "Declare Network Policy (walkthrough)",
+          "url": "https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/"
+        }
+      ]
+    },
+    {
+      "title": "PersistentVolume and claim",
+      "domain": "Storage",
+      "weight": 6,
+      "context": "k8s",
+      "text": "Create a PersistentVolume named `pv-data` with:\n\n- capacity `1Gi`\n- access mode `ReadWriteOnce`\n- `hostPath` at `/mnt/data`\n- `storageClassName: manual`\n\nCreate a PersistentVolumeClaim named `pvc-data` in namespace `default` requesting `500Mi` with access mode `ReadWriteOnce` and `storageClassName: manual`, so that it binds to `pv-data`.\n\nFinally create a Pod named `data-pod` in namespace `default` with image `nginx:1.27` that mounts the claim at `/usr/share/nginx/html`.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pv",
+          "name": "pv-data",
+          "assert": {
+            "spec.capacity.storage": "1Gi",
+            "spec.accessModes": {
+              "contains": "ReadWriteOnce"
+            },
+            "spec.hostPath.path": "/mnt/data",
+            "spec.storageClassName": "manual"
+          },
+          "hint": "pv-data must be 1Gi, ReadWriteOnce, hostPath /mnt/data, storageClassName manual"
+        },
+        {
+          "type": "pvcBound",
+          "cluster": "k8s",
+          "namespace": "default",
+          "name": "pvc-data",
+          "volume": "pv-data",
+          "hint": "pvc-data must be Bound to pv-data"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "data-pod",
+          "assert": {
+            "spec.volumes": {
+              "anyMatch": {
+                "persistentVolumeClaim.claimName": "pvc-data"
+              }
+            },
+            "spec.containers[0].volumeMounts": {
+              "anyMatch": {
+                "mountPath": "/usr/share/nginx/html"
+              }
+            }
+          },
+          "hint": "data-pod must mount pvc-data at /usr/share/nginx/html"
+        },
+        {
+          "type": "podsReady",
+          "cluster": "k8s",
+          "namespace": "default",
+          "name": "data-pod",
+          "hint": "data-pod is not running"
+        }
+      ],
+      "solution": "    apiVersion: v1\n    kind: PersistentVolume\n    metadata:\n      name: pv-data\n    spec:\n      capacity:\n        storage: 1Gi\n      accessModes:\n      - ReadWriteOnce\n      storageClassName: manual\n      hostPath:\n        path: /mnt/data\n    ---\n    apiVersion: v1\n    kind: PersistentVolumeClaim\n    metadata:\n      name: pvc-data\n    spec:\n      accessModes:\n      - ReadWriteOnce\n      storageClassName: manual\n      resources:\n        requests:\n          storage: 500Mi\n    ---\n    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: data-pod\n    spec:\n      volumes:\n      - name: data\n        persistentVolumeClaim:\n          claimName: pvc-data\n      containers:\n      - name: nginx\n        image: nginx:1.27\n        volumeMounts:\n        - name: data\n          mountPath: /usr/share/nginx/html\n\nPut all three in one file and `kubectl apply -f`. A claim binds to a volume whose storageClassName matches, whose access modes include the requested ones, and whose capacity is at least the request — check with `kubectl get pv,pvc`.",
+      "references": [
+        {
+          "title": "Persistent Volumes",
+          "url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/"
+        },
+        {
+          "title": "Configure a Pod to Use a PersistentVolume",
+          "url": "https://kubernetes.io/docs/tutorials/configuration/configure-persistent-volume-storage/"
+        }
+      ]
+    },
+    {
+      "title": "StorageClass",
+      "domain": "Storage",
+      "weight": 4,
+      "context": "k8s",
+      "text": "Create a StorageClass named `fast-local` with:\n\n- provisioner `rancher.io/local-path`\n- `volumeBindingMode: WaitForFirstConsumer`\n- `reclaimPolicy: Delete`",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "sc",
+          "name": "fast-local",
+          "assert": {
+            "provisioner": "rancher.io/local-path",
+            "volumeBindingMode": "WaitForFirstConsumer",
+            "reclaimPolicy": "Delete"
+          },
+          "hint": "fast-local must use rancher.io/local-path, WaitForFirstConsumer and Delete"
+        }
+      ],
+      "solution": "    apiVersion: storage.k8s.io/v1\n    kind: StorageClass\n    metadata:\n      name: fast-local\n    provisioner: rancher.io/local-path\n    volumeBindingMode: WaitForFirstConsumer\n    reclaimPolicy: Delete\n\nNote that `provisioner`, `reclaimPolicy` and `volumeBindingMode` are top-level fields on a StorageClass, not under `spec`. `WaitForFirstConsumer` delays volume creation until a pod using the claim is scheduled, so the volume lands on the right node.",
+      "references": [
+        {
+          "title": "Storage Classes",
+          "url": "https://kubernetes.io/docs/concepts/storage/storage-classes/"
+        },
+        {
+          "title": "Dynamic Volume Provisioning",
+          "url": "https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/"
+        }
+      ]
+    },
+    {
+      "title": "RBAC for a ServiceAccount",
+      "domain": "Cluster Architecture, Installation & Configuration",
+      "weight": 6,
+      "context": "k8s",
+      "text": "In namespace `apps`:\n\n- create a ServiceAccount named `deploy-bot`\n- create a Role named `deploy-manager` that allows the verbs `create`, `get`, `list` and `update` on `deployments`\n- create a RoleBinding named `deploy-bot-binding` that binds the Role to the ServiceAccount\n\nThe ServiceAccount must **not** be able to delete deployments or create pods.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "sa",
+          "namespace": "apps",
+          "name": "deploy-bot",
+          "hint": "serviceaccount deploy-bot missing in apps"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "role",
+          "namespace": "apps",
+          "name": "deploy-manager",
+          "hint": "role deploy-manager missing in apps"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "rolebinding",
+          "namespace": "apps",
+          "name": "deploy-bot-binding",
+          "hint": "rolebinding deploy-bot-binding missing in apps"
+        },
+        {
+          "type": "canI",
+          "cluster": "k8s",
+          "as": "system:serviceaccount:apps:deploy-bot",
+          "verb": "create",
+          "resource": "deployments",
+          "namespace": "apps",
+          "expect": true,
+          "hint": "deploy-bot cannot create deployments in apps"
+        },
+        {
+          "type": "canI",
+          "cluster": "k8s",
+          "as": "system:serviceaccount:apps:deploy-bot",
+          "verb": "list",
+          "resource": "deployments",
+          "namespace": "apps",
+          "expect": true,
+          "hint": "deploy-bot cannot list deployments in apps"
+        },
+        {
+          "type": "canI",
+          "cluster": "k8s",
+          "as": "system:serviceaccount:apps:deploy-bot",
+          "verb": "delete",
+          "resource": "deployments",
+          "namespace": "apps",
+          "expect": false,
+          "hint": "deploy-bot must not be able to delete deployments"
+        },
+        {
+          "type": "canI",
+          "cluster": "k8s",
+          "as": "system:serviceaccount:apps:deploy-bot",
+          "verb": "create",
+          "resource": "pods",
+          "namespace": "apps",
+          "expect": false,
+          "hint": "deploy-bot must not be able to create pods"
+        }
+      ],
+      "solution": "    kubectl -n apps create serviceaccount deploy-bot\n    kubectl -n apps create role deploy-manager --verb=create,get,list,update --resource=deployments\n    kubectl -n apps create rolebinding deploy-bot-binding --role=deploy-manager --serviceaccount=apps:deploy-bot\n\nVerify with impersonation:\n\n    kubectl -n apps auth can-i create deployments --as=system:serviceaccount:apps:deploy-bot   # yes\n    kubectl -n apps auth can-i delete deployments --as=system:serviceaccount:apps:deploy-bot   # no\n\nA Role is namespaced and grants nothing by itself; the RoleBinding attaches it to a subject. ServiceAccount subjects are written `system:serviceaccount:<namespace>:<name>`.",
+      "references": [
+        {
+          "title": "Using RBAC Authorization",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/"
+        },
+        {
+          "title": "kubectl auth can-i",
+          "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_auth/kubectl_auth_can-i/"
+        }
+      ]
+    },
+    {
+      "title": "etcd backup",
+      "domain": "Cluster Architecture, Installation & Configuration",
+      "weight": 8,
+      "context": "k8s",
+      "ssh": "ssh cka-control",
+      "text": "Create a snapshot of the etcd instance running on the control plane node `cka-control` and save it to `/opt/etcd-backup.db` on that node.\n\nThe following TLS material is available under `/etc/kubernetes/pki/etcd/`:\n\n- CA certificate: `ca.crt`\n- client certificate: `server.crt`\n- client key: `server.key`\n\nThe etcd endpoint is `https://127.0.0.1:2379`.",
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cka-control",
+          "path": "/opt/etcd-backup.db",
+          "contains": "etcd-snapshot",
+          "hint": "/opt/etcd-backup.db does not exist on cka-control or is not an etcd snapshot"
+        }
+      ],
+      "solution": "    ssh cka-control\n    sudo -i\n    ETCDCTL_API=3 etcdctl snapshot save /opt/etcd-backup.db \\\n      --endpoints=https://127.0.0.1:2379 \\\n      --cacert=/etc/kubernetes/pki/etcd/ca.crt \\\n      --cert=/etc/kubernetes/pki/etcd/server.crt \\\n      --key=/etc/kubernetes/pki/etcd/server.key\n    ETCDCTL_API=3 etcdctl snapshot status /opt/etcd-backup.db -w table\n\nRoot is needed because the key files are mode 600. Without the three TLS flags etcdctl cannot authenticate and fails with `context deadline exceeded`. The certificate paths can always be read from the etcd static pod manifest: `cat /etc/kubernetes/manifests/etcd.yaml | grep -E 'cert|key|trusted'`.",
+      "references": [
+        {
+          "title": "Operating etcd clusters — Backing up an etcd cluster",
+          "url": "https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/#backing-up-an-etcd-cluster"
+        }
+      ]
+    },
+    {
+      "title": "Upgrade the control plane",
+      "domain": "Cluster Architecture, Installation & Configuration",
+      "weight": 7,
+      "context": "k8s-ops",
+      "ssh": "ssh ops-control",
+      "text": "The cluster `k8s-ops` runs Kubernetes `1.31.0`. Upgrade **only the control plane node** `ops-control` to version `1.31.2`:\n\n- upgrade `kubeadm`, run the upgrade, then upgrade `kubelet` and `kubectl`\n- drain the node before upgrading and make it schedulable again afterwards\n- the packages are held with `apt-mark`; version strings look like `1.31.2-1.1`\n\nWhen you are done, `kubectl get nodes` must show `ops-control` at `v1.31.2` and `Ready`.",
+      "checks": [
+        {
+          "type": "clusterVersion",
+          "cluster": "k8s-ops",
+          "version": "1.31.2",
+          "hint": "the control plane (kubeadm upgrade apply) is not at v1.31.2"
+        },
+        {
+          "type": "nodeVersion",
+          "cluster": "k8s-ops",
+          "node": "ops-control",
+          "version": "1.31.2",
+          "hint": "kubelet on ops-control is not reporting v1.31.2 (upgrade the kubelet package and restart it)"
+        },
+        {
+          "type": "nodeSchedulable",
+          "cluster": "k8s-ops",
+          "node": "ops-control",
+          "hint": "ops-control is still cordoned"
+        },
+        {
+          "type": "nodeReady",
+          "cluster": "k8s-ops",
+          "node": "ops-control",
+          "hint": "ops-control is not Ready"
+        }
+      ],
+      "solution": "From the base host, drain the node, then do the package work on the node itself:\n\n    kubectl config use-context k8s-ops\n    kubectl drain ops-control --ignore-daemonsets\n    ssh ops-control\n    sudo -i\n    apt-mark unhold kubeadm && apt-get update && apt-get install -y kubeadm=1.31.2-1.1 && apt-mark hold kubeadm\n    kubeadm version\n    kubeadm upgrade plan\n    kubeadm upgrade apply v1.31.2\n    apt-mark unhold kubelet kubectl && apt-get install -y kubelet=1.31.2-1.1 kubectl=1.31.2-1.1 && apt-mark hold kubelet kubectl\n    systemctl daemon-reload\n    systemctl restart kubelet\n    exit\n    exit\n    kubectl uncordon ops-control\n    kubectl get nodes\n\nOrder matters: kubeadm first (it drives the control-plane upgrade), then `kubeadm upgrade apply`, then kubelet/kubectl. The node reports its version from the running kubelet, so it only shows v1.31.2 after the restart. Worker nodes use `kubeadm upgrade node` instead of `apply`.",
+      "references": [
+        {
+          "title": "Upgrading kubeadm clusters",
+          "url": "https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/"
+        },
+        {
+          "title": "Safely Drain a Node",
+          "url": "https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/"
+        }
+      ]
+    },
+    {
+      "title": "Node NotReady",
+      "domain": "Troubleshooting",
+      "weight": 10,
+      "context": "k8s-ops",
+      "ssh": "ssh ops-node2",
+      "text": "The worker node `ops-node2` in cluster `k8s-ops` is in `NotReady` state.\n\nInvestigate and fix the problem so that the node becomes `Ready`. Make sure the fix is permanent (the responsible service must be enabled).",
+      "checks": [
+        {
+          "type": "hostService",
+          "host": "ops-node2",
+          "name": "kubelet",
+          "active": true,
+          "enabled": true,
+          "hint": "kubelet on ops-node2 is not active and enabled"
+        },
+        {
+          "type": "nodeReady",
+          "cluster": "k8s-ops",
+          "node": "ops-node2",
+          "hint": "ops-node2 is still NotReady"
+        }
+      ],
+      "solution": "    kubectl get nodes\n    kubectl describe node ops-node2       # Ready condition: Unknown, \"Kubelet stopped posting node status\"\n    ssh ops-node2\n    systemctl status kubelet              # inactive (dead)\n    sudo systemctl enable --now kubelet   # start it and make it survive reboots\n    systemctl status kubelet\n    exit\n    kubectl get nodes                     # Ready\n\nA NotReady node nearly always means the kubelet is down or cannot reach the API server. Check `systemctl status kubelet` first, then `journalctl -u kubelet` for why it failed (bad config path, wrong certificates, swap enabled, container runtime down).",
+      "references": [
+        {
+          "title": "Troubleshooting Clusters",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/"
+        },
+        {
+          "title": "Nodes — Node status conditions",
+          "url": "https://kubernetes.io/docs/reference/node/node-status/#condition"
+        }
+      ]
+    },
+    {
+      "title": "Broken Deployment",
+      "domain": "Troubleshooting",
+      "weight": 8,
+      "context": "k8s-ops",
+      "text": "The Deployment `checkout` in namespace `shop` has pods that are not running.\n\nFind the cause and fix the Deployment in place (do not delete and recreate it). The intended image is `nginx:1.27-alpine`. All replicas must become available.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s-ops",
+          "kind": "deployment",
+          "namespace": "shop",
+          "name": "checkout",
+          "assert": {
+            "spec.template.spec.containers[0].image": "nginx:1.27-alpine"
+          },
+          "hint": "checkout must use image nginx:1.27-alpine"
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "k8s-ops",
+          "namespace": "shop",
+          "name": "checkout",
+          "hint": "not all replicas of checkout are available"
+        }
+      ],
+      "solution": "    kubectl -n shop get pods                                  # ImagePullBackOff\n    kubectl -n shop describe pod <checkout-pod> | tail -n 15  # \"failed to pull image nginx:1.27-alpne\"\n    kubectl -n shop set image deployment/checkout nginx=nginx:1.27-alpine\n    kubectl -n shop rollout status deployment checkout\n\n`set image` (or `kubectl edit deployment checkout`) changes the pod template, which triggers a new ReplicaSet — the deployment itself is never deleted. `ErrImagePull` / `ImagePullBackOff` are almost always a typo in the image name or tag; `describe pod` shows the exact string the kubelet tried to pull.",
+      "references": [
+        {
+          "title": "Debug Pods",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/"
+        },
+        {
+          "title": "Updating a Deployment",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment"
+        }
+      ]
+    },
+    {
+      "title": "Find the busiest Pod",
+      "domain": "Troubleshooting",
+      "weight": 6,
+      "context": "k8s",
+      "text": "Using the metrics available in the cluster, find the Pod in namespace `monitoring` that consumes the **most CPU**.\n\nWrite only the Pod's name into the file `/opt/answers/high-cpu.txt` on the base host (the host you are logged into when the exam starts).",
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cka-base",
+          "path": "/opt/answers/high-cpu.txt",
+          "equals": "log-shipper",
+          "hint": "/opt/answers/high-cpu.txt on cka-base must contain exactly the name of the highest-CPU pod in monitoring"
+        }
+      ],
+      "solution": "    kubectl top pods -n monitoring --sort-by=cpu\n    echo log-shipper > /opt/answers/high-cpu.txt\n    cat /opt/answers/high-cpu.txt\n\n`kubectl top` reads the Metrics API (served by metrics-server); `--sort-by=cpu` or `--sort-by=memory` puts the biggest consumer first. Write the name only, with no extra text, when a question asks for an answer file.",
+      "references": [
+        {
+          "title": "Resource metrics pipeline",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/resource-metrics-pipeline/"
+        },
+        {
+          "title": "kubectl top pod",
+          "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_top/kubectl_top_pod/"
+        }
+      ]
+    },
+    {
+      "title": "Service without endpoints",
+      "domain": "Troubleshooting",
+      "weight": 6,
+      "context": "k8s-ops",
+      "text": "In namespace `shop`, the Service `orders-svc` is supposed to route traffic to the pods of the Deployment `orders`, but it has no endpoints.\n\nFix the Service so that it selects the `orders` pods. Do not change the Deployment.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s-ops",
+          "kind": "service",
+          "namespace": "shop",
+          "name": "orders-svc",
+          "assert": {
+            "spec.selector.app": "orders"
+          },
+          "hint": "orders-svc selector must match the orders pods (app=orders)"
+        },
+        {
+          "type": "serviceEndpoints",
+          "cluster": "k8s-ops",
+          "namespace": "shop",
+          "name": "orders-svc",
+          "min": 2,
+          "hint": "orders-svc still has no endpoints"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s-ops",
+          "kind": "deployment",
+          "namespace": "shop",
+          "name": "orders",
+          "assert": {
+            "spec.template.metadata.labels.app": "orders",
+            "spec.replicas": 2
+          },
+          "hint": "the orders Deployment must not be changed"
+        }
+      ],
+      "solution": "    kubectl -n shop get endpoints orders-svc                 # <none>\n    kubectl -n shop get svc orders-svc -o wide               # SELECTOR app=order\n    kubectl -n shop get pods --show-labels                   # pods carry app=orders\n    kubectl -n shop patch svc orders-svc -p '{\"spec\":{\"selector\":{\"app\":\"orders\"}}}'\n    kubectl -n shop get endpoints orders-svc                 # two pod IPs\n\n`kubectl edit svc orders-svc -n shop` works just as well. The Service selector must match the pod labels exactly; comparing `get svc -o wide` with `get pods --show-labels` finds these in seconds.",
+      "references": [
+        {
+          "title": "Debug Services",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/"
+        },
+        {
+          "title": "Service — Defining a Service",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/service/#defining-a-service"
+        }
+      ]
+    },
+    {
+      "title": "DaemonSet on every node",
+      "domain": "Workloads & Scheduling",
+      "weight": 4,
+      "context": "k8s-ops",
+      "text": "Create a DaemonSet named `log-agent` in namespace `kube-system` using image `busybox:1.36` with the command `sleep 3600`.\n\nIt must run one Pod on **every** node of the cluster, including the control plane node.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s-ops",
+          "kind": "ds",
+          "namespace": "kube-system",
+          "name": "log-agent",
+          "assert": {
+            "spec.template.spec.containers[0].image": "busybox:1.36"
+          },
+          "hint": "daemonset log-agent with image busybox:1.36 missing in kube-system"
+        },
+        {
+          "type": "dsCoversNodes",
+          "cluster": "k8s-ops",
+          "namespace": "kube-system",
+          "name": "log-agent",
+          "includeControlPlane": true,
+          "hint": "log-agent does not have a running pod on every node (control plane taint?)"
+        }
+      ],
+      "solution": "There is no `kubectl create daemonset`; the quickest route is to generate a Deployment and edit it:\n\n    kubectl -n kube-system create deployment log-agent --image=busybox:1.36 $do -- sleep 3600 > ds.yaml\n    vim ds.yaml     # kind: DaemonSet, delete replicas and strategy, add the toleration\n\n    apiVersion: apps/v1\n    kind: DaemonSet\n    metadata:\n      name: log-agent\n      namespace: kube-system\n    spec:\n      selector:\n        matchLabels:\n          app: log-agent\n      template:\n        metadata:\n          labels:\n            app: log-agent\n        spec:\n          tolerations:\n          - key: node-role.kubernetes.io/control-plane\n            operator: Exists\n            effect: NoSchedule\n          containers:\n          - name: agent\n            image: busybox:1.36\n            command: [\"sleep\", \"3600\"]\n\nControl-plane nodes carry a `NoSchedule` taint, so without the toleration the DaemonSet skips them. `kubectl -n kube-system get ds log-agent` should show DESIRED equal to the node count.",
+      "references": [
+        {
+          "title": "DaemonSet",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/"
+        },
+        {
+          "title": "Taints and Tolerations",
+          "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/"
+        }
+      ]
+    },
+    {
+      "title": "Ingress",
+      "domain": "Services & Networking",
+      "weight": 6,
+      "context": "k8s",
+      "text": "In namespace `www` there is a Deployment `www` exposed by the Service `www` on port `80`.\n\nCreate an Ingress named `www-ingress` in namespace `www` that routes requests for host `www.example.com` and path `/` (pathType `Prefix`) to Service `www` on port `80`. Use the ingress class `nginx`.",
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "ingress",
+          "namespace": "www",
+          "name": "www-ingress",
+          "assert": {
+            "spec.ingressClassName": "nginx",
+            "spec.rules[0].host": "www.example.com",
+            "spec.rules[0].http.paths[0].path": "/",
+            "spec.rules[0].http.paths[0].pathType": "Prefix",
+            "spec.rules[0].http.paths[0].backend.service.name": "www",
+            "spec.rules[0].http.paths[0].backend.service.port.number": 80
+          },
+          "hint": "www-ingress must route www.example.com / (Prefix) to service www:80 with ingressClassName nginx"
+        }
+      ],
+      "solution": "    kubectl -n www create ingress www-ingress --class=nginx --rule=\"www.example.com/*=www:80\"\n    kubectl -n www get ingress www-ingress -o yaml\n\nThe `/*` in the rule produces `pathType: Prefix` (a plain `/` gives `Exact`). Equivalent YAML:\n\n    apiVersion: networking.k8s.io/v1\n    kind: Ingress\n    metadata:\n      name: www-ingress\n      namespace: www\n    spec:\n      ingressClassName: nginx\n      rules:\n      - host: www.example.com\n        http:\n          paths:\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: www\n                port:\n                  number: 80",
+      "references": [
+        {
+          "title": "Ingress",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/"
+        },
+        {
+          "title": "kubectl create ingress",
+          "url": "https://kubernetes.io/docs/reference/kubectl/generated/kubectl_create/kubectl_create_ingress/"
+        }
+      ]
+    }
+  ]
+}

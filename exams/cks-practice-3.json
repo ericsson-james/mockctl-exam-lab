@@ -1,0 +1,1570 @@
+{
+  "uuid": "c0a80101-0000-4000-8000-0000000c4503",
+  "name": "Unofficial CKS Practice Exam 3",
+  "exam": "CKS",
+  "durationMinutes": 120,
+  "passPercent": 67,
+  "candidate": "candidate",
+  "clientVersion": "1.31.0",
+  "base": {
+    "hostname": "cks-base",
+    "ip": "10.0.0.6",
+    "files": {
+      "/opt/answers/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/home/candidate/manifests/a.yaml": {
+        "content": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: metrics\n  namespace: tools\nspec:\n  containers:\n  - name: main\n    image: busybox:1.36\n    command: [\"sleep\", \"3600\"]\n    securityContext:\n      runAsNonRoot: true\n      readOnlyRootFilesystem: true\n",
+        "owner": "candidate",
+        "mode": "644"
+      },
+      "/home/candidate/manifests/b.yaml": {
+        "content": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: debug\n  namespace: tools\nspec:\n  containers:\n  - name: main\n    image: busybox:1.36\n    command: [\"sleep\", \"3600\"]\n    securityContext:\n      privileged: true\n",
+        "owner": "candidate",
+        "mode": "644"
+      },
+      "/home/candidate/manifests/c.yaml": {
+        "content": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: worker\n  namespace: tools\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: worker\n  template:\n    metadata:\n      labels:\n        app: worker\n    spec:\n      containers:\n      - name: main\n        image: busybox:1.36\n        command: [\"sleep\", \"3600\"]\n        resources:\n          limits:\n            cpu: 200m\n            memory: 128Mi\n",
+        "owner": "candidate",
+        "mode": "644"
+      },
+      "/home/candidate/manifests/d.yaml": {
+        "content": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: netdiag\n  namespace: tools\nspec:\n  hostNetwork: true\n  hostPID: true\n  containers:\n  - name: main\n    image: busybox:1.36\n    command: [\"sleep\", \"3600\"]\n",
+        "owner": "candidate",
+        "mode": "644"
+      }
+    },
+    "homeFiles": {
+      "README.txt": "CKS practice exam 3 base host. Answer files go under /opt/answers/.\nManifests for the static-analysis task are under ~/manifests/.\n"
+    }
+  },
+  "contexts": {
+    "cks": {
+      "cluster": "cks",
+      "namespace": "default"
+    }
+  },
+  "defaultContext": "cks",
+  "kubeBench": [
+    {
+      "id": "1.2.19",
+      "section": "API Server",
+      "host": "cks3-control",
+      "file": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+      "contains": "--audit-log-maxsize=100",
+      "text": "Ensure that the --audit-log-maxsize argument is set to 100 or as appropriate (Automated)",
+      "remediation": "Edit /etc/kubernetes/manifests/kube-apiserver.yaml and set --audit-log-maxsize=100"
+    },
+    {
+      "id": "1.2.6",
+      "section": "API Server",
+      "host": "cks3-control",
+      "file": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+      "notContains": "AlwaysAdmit",
+      "text": "Ensure that the admission control plugin AlwaysAdmit is not set (Automated)",
+      "remediation": "Remove AlwaysAdmit from --enable-admission-plugins"
+    },
+    {
+      "id": "1.2.14",
+      "section": "API Server",
+      "host": "cks3-control",
+      "file": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+      "contains": "NodeRestriction",
+      "text": "Ensure that the admission control plugin NodeRestriction is set (Automated)",
+      "remediation": "Set --enable-admission-plugins to include NodeRestriction"
+    },
+    {
+      "id": "1.3.6",
+      "section": "Controller Manager",
+      "host": "cks3-control",
+      "file": "/etc/kubernetes/manifests/kube-controller-manager.yaml",
+      "contains": "RotateKubeletServerCertificate=true",
+      "text": "Ensure that the RotateKubeletServerCertificate argument is set to true (Automated)",
+      "remediation": "Edit /etc/kubernetes/manifests/kube-controller-manager.yaml and add --feature-gates=RotateKubeletServerCertificate=true"
+    }
+  ],
+  "clusters": {
+    "cks": {
+      "version": "1.31.0",
+      "ageDays": 50,
+      "nodes": [
+        {
+          "name": "cks3-control",
+          "roles": [
+            "control-plane"
+          ],
+          "ip": "10.0.4.11"
+        },
+        {
+          "name": "cks3-node1",
+          "ip": "10.0.4.12"
+        },
+        {
+          "name": "cks3-node2",
+          "ip": "10.0.4.13"
+        }
+      ],
+      "resources": [
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "kubernetes-dashboard"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "edge"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "ci"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "vault"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "vault2"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "web"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "ops"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "prod"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "tools"
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "kubernetes-dashboard",
+            "namespace": "kubernetes-dashboard",
+            "labels": {
+              "k8s-app": "kubernetes-dashboard"
+            }
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "k8s-app": "kubernetes-dashboard"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "k8s-app": "kubernetes-dashboard"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "kubernetesui/dashboard:v2.7.0",
+                    "ports": [
+                      {
+                        "containerPort": 8443
+                      }
+                    ],
+                    "args": [
+                      "--auto-generate-certificates",
+                      "--enable-skip-login",
+                      "--enable-insecure-login",
+                      "--namespace=kubernetes-dashboard"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "kubernetes-dashboard",
+            "namespace": "kubernetes-dashboard"
+          },
+          "spec": {
+            "type": "NodePort",
+            "selector": {
+              "k8s-app": "kubernetes-dashboard"
+            },
+            "ports": [
+              {
+                "port": 443,
+                "targetPort": 8443,
+                "nodePort": 32000
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "api",
+            "namespace": "edge",
+            "labels": {
+              "app": "api"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "api"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "api"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "httpd:2.4",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "api",
+            "namespace": "edge"
+          },
+          "spec": {
+            "selector": {
+              "app": "api"
+            },
+            "ports": [
+              {
+                "port": 80,
+                "targetPort": 80
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "proxy",
+            "namespace": "edge",
+            "labels": {
+              "app": "proxy"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "main",
+                "image": "busybox:1.36",
+                "command": [
+                  "sleep",
+                  "3600"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "reports",
+            "namespace": "edge",
+            "labels": {
+              "app": "reports"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "reports"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "reports"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "untrusted",
+            "namespace": "edge",
+            "labels": {
+              "app": "untrusted"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "untrusted"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "untrusted"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "node.k8s.io/v1",
+          "kind": "RuntimeClass",
+          "metadata": {
+            "name": "gvisor"
+          },
+          "handler": "runsc"
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "ServiceAccount",
+          "metadata": {
+            "name": "legacy-deploy",
+            "namespace": "ci"
+          }
+        },
+        {
+          "apiVersion": "rbac.authorization.k8s.io/v1",
+          "kind": "Role",
+          "metadata": {
+            "name": "deployer",
+            "namespace": "ci"
+          },
+          "rules": [
+            {
+              "apiGroups": [
+                "apps"
+              ],
+              "resources": [
+                "deployments"
+              ],
+              "verbs": [
+                "*"
+              ]
+            }
+          ]
+        },
+        {
+          "apiVersion": "rbac.authorization.k8s.io/v1",
+          "kind": "RoleBinding",
+          "metadata": {
+            "name": "legacy-deploy-rb",
+            "namespace": "ci"
+          },
+          "roleRef": {
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "Role",
+            "name": "deployer"
+          },
+          "subjects": [
+            {
+              "kind": "ServiceAccount",
+              "name": "legacy-deploy",
+              "namespace": "ci"
+            }
+          ]
+        },
+        {
+          "apiVersion": "batch/v1",
+          "kind": "CronJob",
+          "metadata": {
+            "name": "nightly",
+            "namespace": "ci"
+          },
+          "spec": {
+            "schedule": "0 2 * * *",
+            "jobTemplate": {
+              "spec": {
+                "template": {
+                  "spec": {
+                    "restartPolicy": "OnFailure",
+                    "containers": [
+                      {
+                        "name": "main",
+                        "image": "busybox:1.36",
+                        "command": [
+                          "sh",
+                          "-c",
+                          "echo nightly"
+                        ],
+                        "securityContext": {
+                          "privileged": true
+                        }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Secret",
+          "metadata": {
+            "name": "db-conn",
+            "namespace": "vault"
+          },
+          "type": "Opaque",
+          "data": {
+            "user": "ZGJhZG1pbg==",
+            "pass": "VHIwdWI0ZG9yJjM="
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "shop",
+            "namespace": "web",
+            "labels": {
+              "app": "shop"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "shop"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "shop"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ],
+                    "imagePullPolicy": "IfNotPresent"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "blog",
+            "namespace": "web",
+            "labels": {
+              "app": "blog"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "blog"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "blog"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "httpd:2.4",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ],
+                    "imagePullPolicy": "IfNotPresent"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "node-tool",
+            "namespace": "ops",
+            "labels": {
+              "app": "node-tool"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "main",
+                "image": "busybox:1.36",
+                "command": [
+                  "sleep",
+                  "3600"
+                ],
+                "volumeMounts": [
+                  {
+                    "name": "host",
+                    "mountPath": "/host"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "host",
+                "hostPath": {
+                  "path": "/"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "logger",
+            "namespace": "ops",
+            "labels": {
+              "app": "logger"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "main",
+                "image": "busybox:1.36",
+                "command": [
+                  "sleep",
+                  "3600"
+                ],
+                "volumeMounts": [
+                  {
+                    "name": "scratch",
+                    "mountPath": "/scratch"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "scratch",
+                "emptyDir": {}
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "monitor",
+            "namespace": "ops",
+            "labels": {
+              "app": "monitor"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "main",
+                "image": "busybox:1.36",
+                "command": [
+                  "sleep",
+                  "3600"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "hosts": {
+        "cks3-control": {
+          "editManifests": {
+            "kube-apiserver": {
+              "replace": [
+                [
+                  "--enable-admission-plugins=NodeRestriction",
+                  "--enable-admission-plugins=AlwaysAdmit"
+                ]
+              ]
+            }
+          },
+          "files": {
+            "/etc/kubernetes/admission/admission-config.yaml": "apiVersion: apiserver.config.k8s.io/v1\nkind: AdmissionConfiguration\nplugins:\n- name: ImagePolicyWebhook\n  configuration:\n    imagePolicy:\n      kubeConfigFile: /etc/kubernetes/admission/imagepolicy-kubeconf\n      allowTTL: 50\n      denyTTL: 50\n      retryBackoff: 500\n      defaultAllow: true\n",
+            "/etc/kubernetes/admission/imagepolicy-kubeconf": "apiVersion: v1\nkind: Config\nclusters:\n- name: image-checker\n  cluster:\n    certificate-authority: /etc/kubernetes/admission/webhook-ca.crt\n    server: https://image-checker.corp.internal:8443/image_policy\ncontexts:\n- name: image-checker\n  context:\n    cluster: image-checker\n    user: api-server\ncurrent-context: image-checker\nusers:\n- name: api-server\n  user:\n    client-certificate: /etc/kubernetes/admission/apiserver-client.crt\n    client-key: /etc/kubernetes/admission/apiserver-client.key\n",
+            "/etc/kubernetes/admission/webhook-ca.crt": "-----BEGIN CERTIFICATE-----\nMIIBszCCAVmgAwIBAgIUImageCheckerCA\n-----END CERTIFICATE-----\n",
+            "/etc/kubernetes/admission/apiserver-client.crt": "-----BEGIN CERTIFICATE-----\nMIIBszCCAVmgAwIBAgIUApiServerClient\n-----END CERTIFICATE-----\n",
+            "/etc/kubernetes/admission/apiserver-client.key": {
+              "content": "{{pem:PRIVATE KEY:apiserver-client}}",
+              "mode": "600"
+            }
+          }
+        },
+        "cks3-node1": {
+          "files": {
+            "/etc/apparmor.d/k8s-restricted": "#include <tunables/global>\n\nprofile k8s-restricted flags=(attach_disconnected) {\n  #include <abstractions/base>\n\n  file,\n  network,\n\n  deny /proc/sys/** w,\n  deny /sys/** w,\n  deny /bin/** wx,\n  deny /usr/bin/** wx,\n}\n",
+            "/etc/falco/falco.yaml": "# Falco configuration\nrules_file:\n  - /etc/falco/falco_rules.yaml\n  - /etc/falco/falco_rules.local.yaml\n\njson_output: false\nlog_stderr: true\nlog_syslog: true\nlog_level: info\npriority: debug\n\nsyslog_output:\n  enabled: true\n\nfile_output:\n  enabled: false\n  keep_alive: false\n  filename: ./events.txt\n\nstdout_output:\n  enabled: true\n\nwebserver:\n  enabled: true\n  listen_port: 8765\n",
+            "/etc/sysctl.d/": null
+          },
+          "services": {
+            "falco": {
+              "active": true,
+              "description": "Falco: Container Native Runtime Security",
+              "journal": [
+                "Falco version: 0.38.2 (x86_64)",
+                "Falco initialized with configuration file: /etc/falco/falco.yaml",
+                "Loading rules from file /etc/falco/falco_rules.yaml",
+                "Starting internal webserver, listening on port 8765"
+              ]
+            }
+          }
+        },
+        "cks3-node2": {
+          "files": {
+            "/etc/apparmor.d/k8s-restricted": "#include <tunables/global>\n\nprofile k8s-restricted flags=(attach_disconnected) {\n  #include <abstractions/base>\n\n  file,\n  network,\n\n  deny /proc/sys/** w,\n  deny /sys/** w,\n  deny /bin/** wx,\n  deny /usr/bin/** wx,\n}\n"
+          }
+        }
+      }
+    }
+  },
+  "questions": [
+    {
+      "title": "Harden the dashboard",
+      "domain": "Cluster Setup",
+      "weight": 6,
+      "context": "cks",
+      "text": "The Kubernetes Dashboard in namespace `kubernetes-dashboard` is exposed on a NodePort and started with insecure options.\n\nChange the Service `kubernetes-dashboard` to type `ClusterIP`, and remove the arguments `--enable-skip-login` and `--enable-insecure-login` from the Deployment `kubernetes-dashboard`. Keep the other arguments. The Deployment must stay available.",
+      "solution": "    kubectl -n kubernetes-dashboard get svc,deploy\n    kubectl -n kubernetes-dashboard patch svc kubernetes-dashboard -p '{\"spec\":{\"type\":\"ClusterIP\"}}'\n    kubectl -n kubernetes-dashboard edit deployment kubernetes-dashboard   # delete the two args\n    kubectl -n kubernetes-dashboard rollout status deployment kubernetes-dashboard\n\nWhen patching a NodePort service to ClusterIP, also clear the `nodePort` fields in `spec.ports` if the API complains. Reach the dashboard afterwards through `kubectl proxy` or `kubectl port-forward`, never a NodePort.",
+      "references": [
+        {
+          "title": "Deploy and Access the Kubernetes Dashboard",
+          "url": "https://kubernetes.io/docs/tasks/access-application-cluster/web-ui-dashboard/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "svc",
+          "namespace": "kubernetes-dashboard",
+          "name": "kubernetes-dashboard",
+          "hint": "service kubernetes-dashboard must be ClusterIP",
+          "assert": {
+            "spec.type": "ClusterIP"
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "kubernetes-dashboard",
+          "name": "kubernetes-dashboard",
+          "hint": "remove --enable-skip-login from the dashboard args",
+          "assert": {
+            "spec.template.spec.containers[0].args": {
+              "notContains": "--enable-skip-login"
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "kubernetes-dashboard",
+          "name": "kubernetes-dashboard",
+          "hint": "remove --enable-insecure-login but keep --auto-generate-certificates",
+          "assert": {
+            "spec.template.spec.containers[0].args": {
+              "contains": "--auto-generate-certificates"
+            }
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "namespace": "kubernetes-dashboard",
+          "name": "kubernetes-dashboard",
+          "hint": "the dashboard deployment is not available"
+        }
+      ]
+    },
+    {
+      "title": "DNS and CIDR-only egress",
+      "domain": "Cluster Setup",
+      "weight": 6,
+      "context": "cks",
+      "text": "The Pod `proxy` (label `app=proxy`) in namespace `edge` must only be able to send traffic to:\n\n- DNS in namespace `kube-system` (TCP and UDP port `53`)\n- the external range `10.10.0.0/16`\n\nCreate a NetworkPolicy `proxy-egress` in `edge` that allows exactly that. Afterwards `proxy` must **not** be able to reach the `api` pods in its own namespace.",
+      "solution": "    apiVersion: networking.k8s.io/v1\n    kind: NetworkPolicy\n    metadata:\n      name: proxy-egress\n      namespace: edge\n    spec:\n      podSelector:\n        matchLabels:\n          app: proxy\n      policyTypes:\n      - Egress\n      egress:\n      - to:\n        - namespaceSelector:\n            matchLabels:\n              kubernetes.io/metadata.name: kube-system\n        ports:\n        - protocol: UDP\n          port: 53\n        - protocol: TCP\n          port: 53\n      - to:\n        - ipBlock:\n            cidr: 10.10.0.0/16\n\nPod IPs live in `10.244.0.0/16`, so the `10.10.0.0/16` block does not cover in-cluster pods — which is exactly why `proxy` loses access to `api`. Verify: `kubectl -n edge exec proxy -- wget -qO- --timeout=2 api` times out.",
+      "references": [
+        {
+          "title": "Network Policies",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "netpol",
+          "namespace": "edge",
+          "name": "proxy-egress",
+          "hint": "proxy-egress must select app=proxy, be an Egress policy and allow ipBlock 10.10.0.0/16",
+          "assert": {
+            "spec.podSelector.matchLabels.app": "proxy",
+            "spec.policyTypes": {
+              "contains": "Egress"
+            },
+            "spec.egress": {
+              "anyMatch": {
+                "to": {
+                  "anyMatch": {
+                    "ipBlock.cidr": "10.10.0.0/16"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "netpol",
+          "namespace": "edge",
+          "name": "proxy-egress",
+          "hint": "proxy-egress must allow port 53 to namespace kube-system",
+          "assert": {
+            "spec.egress": {
+              "anyMatch": {
+                "to": {
+                  "anyMatch": {
+                    "namespaceSelector.matchLabels.kubernetes\\.io/metadata\\.name": "kube-system"
+                  }
+                },
+                "ports": {
+                  "anyMatch": {
+                    "port": 53
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "connectivity",
+          "to": {
+            "namespace": "edge",
+            "selector": "app=api"
+          },
+          "port": 80,
+          "expect": false,
+          "hint": "proxy must no longer reach the api pods",
+          "from": {
+            "namespace": "edge",
+            "name": "proxy"
+          }
+        }
+      ]
+    },
+    {
+      "title": "CIS findings for the control plane",
+      "domain": "Cluster Setup",
+      "weight": 5,
+      "context": "cks",
+      "text": "Run `kube-bench` on `cks3-control` and remediate these findings:\n\n- `1.2.19` — the API server must set `--audit-log-maxsize=100`\n- `1.3.6` — the controller manager must enable `RotateKubeletServerCertificate` via `--feature-gates=RotateKubeletServerCertificate=true`\n\nBoth components must stay healthy.",
+      "solution": "    ssh cks3-control\n    sudo -i\n    kube-bench\n    vim /etc/kubernetes/manifests/kube-apiserver.yaml            # add: - --audit-log-maxsize=100\n    vim /etc/kubernetes/manifests/kube-controller-manager.yaml   # add: - --feature-gates=RotateKubeletServerCertificate=true\n    kube-bench --check 1.2.19,1.3.6\n    exit; exit\n\n(kube-bench also reports 1.2.6/1.2.14 about admission plugins — that is the next task.)",
+      "references": [
+        {
+          "title": "kube-bench",
+          "url": "https://github.com/aquasecurity/kube-bench"
+        },
+        {
+          "title": "kube-controller-manager reference",
+          "url": "https://kubernetes.io/docs/reference/command-line-tools-reference/kube-controller-manager/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--audit-log-maxsize=100",
+          "hint": "kube-apiserver needs --audit-log-maxsize=100"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-controller-manager.yaml",
+          "contains": "--feature-gates=RotateKubeletServerCertificate=true",
+          "hint": "kube-controller-manager needs --feature-gates=RotateKubeletServerCertificate=true"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-apiserver",
+          "hint": "kube-apiserver manifest is broken"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-controller-manager",
+          "hint": "kube-controller-manager manifest is broken"
+        }
+      ],
+      "ssh": "ssh cks3-control"
+    },
+    {
+      "title": "API server admission and TLS",
+      "domain": "Cluster Hardening",
+      "weight": 6,
+      "context": "cks",
+      "text": "On `cks3-control` the API server currently enables the `AlwaysAdmit` admission plugin.\n\nChange the manifest so that the enabled admission plugins are `NodeRestriction` (and **not** `AlwaysAdmit`), and require TLS 1.2 or newer with `--tls-min-version=VersionTLS12`. The API server must come back healthy.",
+      "solution": "    ssh cks3-control\n    sudo -i\n    vim /etc/kubernetes/manifests/kube-apiserver.yaml\n      # - --enable-admission-plugins=AlwaysAdmit   ->   - --enable-admission-plugins=NodeRestriction\n      # add:  - --tls-min-version=VersionTLS12\n    exit; exit\n    kubectl get nodes\n\n`NodeRestriction` stops a compromised kubelet from modifying other nodes' objects; `AlwaysAdmit` disables admission control altogether and is removed in current Kubernetes releases.",
+      "references": [
+        {
+          "title": "Admission controllers — NodeRestriction",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#noderestriction"
+        },
+        {
+          "title": "kube-apiserver reference",
+          "url": "https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "NodeRestriction",
+          "hint": "kube-apiserver must enable the NodeRestriction admission plugin"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "notContains": "AlwaysAdmit",
+          "hint": "AlwaysAdmit must be removed from the admission plugins"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--tls-min-version=VersionTLS12",
+          "hint": "kube-apiserver needs --tls-min-version=VersionTLS12"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-apiserver",
+          "hint": "the kube-apiserver manifest is broken"
+        }
+      ],
+      "ssh": "ssh cks3-control"
+    },
+    {
+      "title": "Clean up service accounts",
+      "domain": "Cluster Hardening",
+      "weight": 6,
+      "context": "cks",
+      "text": "In namespace `ci`:\n\n- the `default` ServiceAccount must not auto-mount API tokens (`automountServiceAccountToken: false`)\n- the unused ServiceAccount `legacy-deploy` and its RoleBinding `legacy-deploy-rb` must be deleted (keep the Role `deployer`)",
+      "solution": "    kubectl -n ci patch serviceaccount default -p '{\"automountServiceAccountToken\": false}'\n    kubectl -n ci get rolebindings -o wide\n    kubectl -n ci delete rolebinding legacy-deploy-rb\n    kubectl -n ci delete serviceaccount legacy-deploy\n\nEvery pod without an explicit `serviceAccountName` uses `default`; disabling its token mount means a compromised pod finds no credentials at `/var/run/secrets/kubernetes.io/serviceaccount`.",
+      "references": [
+        {
+          "title": "Configure Service Accounts for Pods",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "sa",
+          "namespace": "ci",
+          "name": "default",
+          "hint": "the default serviceaccount in ci must set automountServiceAccountToken: false",
+          "assert": {
+            "automountServiceAccountToken": false
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "sa",
+          "namespace": "ci",
+          "name": "legacy-deploy",
+          "exists": false,
+          "hint": "serviceaccount legacy-deploy must be deleted"
+        },
+        {
+          "type": "resource",
+          "kind": "rolebinding",
+          "namespace": "ci",
+          "name": "legacy-deploy-rb",
+          "exists": false,
+          "hint": "rolebinding legacy-deploy-rb must be deleted"
+        },
+        {
+          "type": "resource",
+          "kind": "role",
+          "namespace": "ci",
+          "name": "deployer",
+          "hint": "role deployer must be kept"
+        }
+      ]
+    },
+    {
+      "title": "Read-only Secret access for a group",
+      "domain": "Cluster Hardening",
+      "weight": 5,
+      "context": "cks",
+      "text": "Members of the group `security-auditors` need to read Secrets in every namespace, and nothing more.\n\nCreate a ClusterRole `secret-reader` allowing `get` and `list` on `secrets`, and a ClusterRoleBinding `auditors-secrets` that grants it to the group.",
+      "solution": "    kubectl create clusterrole secret-reader --verb=get,list --resource=secrets\n    kubectl create clusterrolebinding auditors-secrets --clusterrole=secret-reader --group=security-auditors\n    kubectl auth can-i list secrets --as=someone --as-group=security-auditors   # yes\n    kubectl auth can-i delete secrets --as=someone --as-group=security-auditors # no\n\nGroups come from the authenticator (certificate O= fields, OIDC claims); binding to a group avoids editing RBAC every time a person joins or leaves.",
+      "references": [
+        {
+          "title": "RBAC — referring to subjects",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/#referring-to-subjects"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "clusterrole",
+          "name": "secret-reader",
+          "hint": "clusterrole secret-reader missing"
+        },
+        {
+          "type": "resource",
+          "kind": "clusterrolebinding",
+          "name": "auditors-secrets",
+          "hint": "clusterrolebinding auditors-secrets must bind secret-reader to group security-auditors",
+          "assert": {
+            "roleRef.name": "secret-reader",
+            "subjects": {
+              "anyMatch": {
+                "kind": "Group",
+                "name": "security-auditors"
+              }
+            }
+          }
+        },
+        {
+          "type": "canI",
+          "groups": [
+            "security-auditors",
+            "system:authenticated"
+          ],
+          "verb": "list",
+          "resource": "secrets",
+          "namespace": "vault",
+          "expect": true,
+          "hint": "security-auditors must be able to list secrets",
+          "as": "auditor1"
+        },
+        {
+          "type": "canI",
+          "groups": [
+            "security-auditors",
+            "system:authenticated"
+          ],
+          "verb": "delete",
+          "resource": "secrets",
+          "namespace": "vault",
+          "expect": false,
+          "hint": "security-auditors must not be able to delete secrets",
+          "as": "auditor1"
+        }
+      ]
+    },
+    {
+      "title": "AppArmor for a Deployment",
+      "domain": "System Hardening",
+      "weight": 6,
+      "context": "cks",
+      "text": "An AppArmor profile `k8s-restricted` is available as a file at `/etc/apparmor.d/k8s-restricted` on both worker nodes (`cks3-node1`, `cks3-node2`) but is not loaded.\n\nLoad it on **both** nodes, then apply it at the **pod level** (`spec.securityContext.appArmorProfile`) to the Deployment `reports` in namespace `edge`. The Deployment must remain available.",
+      "solution": "    ssh cks3-node1 sudo apparmor_parser -q /etc/apparmor.d/k8s-restricted\n    ssh cks3-node2 sudo apparmor_parser -q /etc/apparmor.d/k8s-restricted\n    kubectl -n edge edit deployment reports\n\n    spec:\n      template:\n        spec:\n          securityContext:\n            appArmorProfile:\n              type: Localhost\n              localhostProfile: k8s-restricted\n\n    kubectl -n edge rollout status deployment reports\n\nA Deployment can land on any worker, so the profile must be present on every node it might run on; otherwise those pods fail with `AppArmor profile not found`.",
+      "references": [
+        {
+          "title": "AppArmor",
+          "url": "https://kubernetes.io/docs/tutorials/security/apparmor/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostApparmorLoaded",
+          "host": "cks3-node1",
+          "profile": "k8s-restricted",
+          "hint": "profile k8s-restricted is not loaded on cks3-node1"
+        },
+        {
+          "type": "hostApparmorLoaded",
+          "host": "cks3-node2",
+          "profile": "k8s-restricted",
+          "hint": "profile k8s-restricted is not loaded on cks3-node2"
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "edge",
+          "name": "reports",
+          "hint": "reports pod template must set pod-level appArmorProfile Localhost/k8s-restricted",
+          "assert": {
+            "spec.template.spec.securityContext.appArmorProfile.type": "Localhost",
+            "spec.template.spec.securityContext.appArmorProfile.localhostProfile": "k8s-restricted"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "namespace": "edge",
+          "name": "reports",
+          "hint": "deployment reports is not fully available"
+        }
+      ]
+    },
+    {
+      "title": "Kernel hardening with sysctl",
+      "domain": "System Hardening",
+      "weight": 5,
+      "context": "cks",
+      "text": "On node `cks3-node1`, harden two kernel parameters **persistently** and apply them now:\n\n- `net.ipv4.conf.all.accept_redirects = 0`\n- `kernel.dmesg_restrict = 1`\n\nPut the settings in `/etc/sysctl.d/99-hardening.conf`.",
+      "solution": "    ssh cks3-node1\n    sudo -i\n    sysctl net.ipv4.conf.all.accept_redirects kernel.dmesg_restrict      # current values\n    vim /etc/sysctl.d/99-hardening.conf\n      # net.ipv4.conf.all.accept_redirects = 0\n      # kernel.dmesg_restrict = 1\n    sysctl --system            # or: sysctl -p /etc/sysctl.d/99-hardening.conf\n    sysctl net.ipv4.conf.all.accept_redirects kernel.dmesg_restrict\n    exit; exit\n\n`sysctl -w` changes the running kernel only; the file under `/etc/sysctl.d/` is what survives a reboot.",
+      "references": [
+        {
+          "title": "Using sysctls in a Kubernetes Cluster",
+          "url": "https://kubernetes.io/docs/tasks/administer-cluster/sysctl-cluster/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks3-node1",
+          "path": "/etc/sysctl.d/99-hardening.conf",
+          "matches": "net\\.ipv4\\.conf\\.all\\.accept_redirects\\s*=\\s*0",
+          "hint": "/etc/sysctl.d/99-hardening.conf must set net.ipv4.conf.all.accept_redirects = 0"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-node1",
+          "path": "/etc/sysctl.d/99-hardening.conf",
+          "matches": "kernel\\.dmesg_restrict\\s*=\\s*1",
+          "hint": "/etc/sysctl.d/99-hardening.conf must set kernel.dmesg_restrict = 1"
+        },
+        {
+          "type": "hostSysctl",
+          "host": "cks3-node1",
+          "key": "net.ipv4.conf.all.accept_redirects",
+          "value": 0,
+          "hint": "the running kernel still accepts ICMP redirects (apply the settings)"
+        },
+        {
+          "type": "hostSysctl",
+          "host": "cks3-node1",
+          "key": "kernel.dmesg_restrict",
+          "value": 1,
+          "hint": "kernel.dmesg_restrict is not applied to the running kernel"
+        }
+      ],
+      "ssh": "ssh cks3-node1"
+    },
+    {
+      "title": "Move a Secret between namespaces",
+      "domain": "Minimize Microservice Vulnerabilities",
+      "weight": 7,
+      "context": "cks",
+      "text": "The Secret `db-conn` in namespace `vault` has the keys `user` and `pass`.\n\n1. Write the **decoded** value of `user` to `/opt/answers/db-user.txt` and of `pass` to `/opt/answers/db-pass.txt` on the base host.\n2. Create a Secret named `db-conn` in namespace `vault2` with the same two keys and values.",
+      "solution": "    kubectl -n vault get secret db-conn -o jsonpath='{.data.user}' | base64 -d > /opt/answers/db-user.txt\n    kubectl -n vault get secret db-conn -o jsonpath='{.data.pass}' | base64 -d > /opt/answers/db-pass.txt\n    kubectl -n vault2 create secret generic db-conn --from-literal=user=\"$(cat /opt/answers/db-user.txt)\" --from-literal=pass=\"$(cat /opt/answers/db-pass.txt)\"\n\nCommand substitution `$(...)` is not available in this lab — read the files and type the values instead:\n\n    kubectl -n vault2 create secret generic db-conn --from-literal=user=dbadmin --from-literal='pass=Tr0ub4dor&3'\n\nQuote values containing shell metacharacters. Alternatively export the Secret to YAML, change `metadata.namespace`, strip `uid`/`resourceVersion`, and apply.",
+      "references": [
+        {
+          "title": "Managing Secrets using kubectl",
+          "url": "https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-kubectl/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks-base",
+          "path": "/opt/answers/db-user.txt",
+          "equals": "dbadmin",
+          "hint": "/opt/answers/db-user.txt must contain the decoded user"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-base",
+          "path": "/opt/answers/db-pass.txt",
+          "equals": "Tr0ub4dor&3",
+          "hint": "/opt/answers/db-pass.txt must contain the decoded password"
+        },
+        {
+          "type": "resource",
+          "kind": "secret",
+          "namespace": "vault2",
+          "name": "db-conn",
+          "hint": "secret db-conn in vault2 must hold the same user and pass values",
+          "assert": {
+            "data.user": "ZGJhZG1pbg==",
+            "data.pass": "VHIwdWI0ZG9yJjM="
+          }
+        }
+      ]
+    },
+    {
+      "title": "Sandbox a Deployment with gVisor",
+      "domain": "Minimize Microservice Vulnerabilities",
+      "weight": 6,
+      "context": "cks",
+      "text": "A RuntimeClass `gvisor` exists. Make every pod of the Deployment `untrusted` in namespace `edge` run in the gVisor sandbox. The Deployment must remain available.",
+      "solution": "    kubectl get runtimeclass\n    kubectl -n edge patch deployment untrusted -p '{\"spec\":{\"template\":{\"spec\":{\"runtimeClassName\":\"gvisor\"}}}}'\n    kubectl -n edge rollout status deployment untrusted\n    kubectl -n edge get pods -l app=untrusted -o jsonpath='{.items[*].spec.runtimeClassName}'\n\ngVisor intercepts the container's syscalls in a user-space kernel, so a kernel exploit inside the container does not reach the host.",
+      "references": [
+        {
+          "title": "Runtime Class",
+          "url": "https://kubernetes.io/docs/concepts/containers/runtime-class/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "edge",
+          "name": "untrusted",
+          "hint": "untrusted pod template must set runtimeClassName: gvisor",
+          "assert": {
+            "spec.template.spec.runtimeClassName": "gvisor"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "namespace": "edge",
+          "name": "untrusted",
+          "hint": "deployment untrusted is not fully available"
+        }
+      ]
+    },
+    {
+      "title": "Restricted namespace with a CronJob",
+      "domain": "Minimize Microservice Vulnerabilities",
+      "weight": 6,
+      "context": "cks",
+      "text": "Enforce the `restricted` Pod Security Standard on namespace `ci`. The CronJob `nightly` there would be rejected under that standard.\n\nApply the label and fix the CronJob's pod template so that its jobs will be admitted: no privileged container, no privilege escalation, all capabilities dropped, non-root, and the `RuntimeDefault` seccomp profile.",
+      "solution": "    kubectl label namespace ci pod-security.kubernetes.io/enforce=restricted\n    kubectl -n ci edit cronjob nightly\n\n    jobTemplate:\n      spec:\n        template:\n          spec:\n            containers:\n            - name: main\n              image: busybox:1.36\n              command: [\"sh\", \"-c\", \"echo nightly\"]\n              securityContext:\n                allowPrivilegeEscalation: false\n                runAsNonRoot: true\n                capabilities:\n                  drop: [\"ALL\"]\n                seccompProfile:\n                  type: RuntimeDefault\n\nTest with a one-off run: `kubectl -n ci create job --from=cronjob/nightly test-run` — its pod is admitted only if the template complies.",
+      "references": [
+        {
+          "title": "Pod Security Standards — restricted",
+          "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "namespace",
+          "name": "ci",
+          "hint": "namespace ci must enforce restricted",
+          "assert": {
+            "metadata.labels.pod-security\\.kubernetes\\.io/enforce": "restricted"
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "cronjob",
+          "namespace": "ci",
+          "name": "nightly",
+          "hint": "nightly's container must be non-privileged, allowPrivilegeEscalation false, drop ALL, runAsNonRoot true, seccomp RuntimeDefault",
+          "assert": {
+            "spec.jobTemplate.spec.template.spec.containers[0].securityContext.privileged": {
+              "matches": "^(undefined|false)$"
+            },
+            "spec.jobTemplate.spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation": false,
+            "spec.jobTemplate.spec.template.spec.containers[0].securityContext.capabilities.drop": {
+              "contains": "ALL"
+            },
+            "spec.jobTemplate.spec.template.spec.containers[0].securityContext.runAsNonRoot": true,
+            "spec.jobTemplate.spec.template.spec.containers[0].securityContext.seccompProfile.type": "RuntimeDefault"
+          }
+        }
+      ]
+    },
+    {
+      "title": "ImagePolicyWebhook",
+      "domain": "Supply Chain Security",
+      "weight": 8,
+      "context": "cks",
+      "text": "An image policy webhook has been prepared on `cks3-control` under `/etc/kubernetes/admission/` (admission configuration, kubeconfig and certificates).\n\nFinish the setup:\n\n- in `admission-config.yaml` set `defaultAllow` to `false` so images are **denied** when the webhook is unreachable\n- enable the `ImagePolicyWebhook` admission plugin on the API server (keep `NodeRestriction`) and point it at the configuration with `--admission-control-config-file=/etc/kubernetes/admission/admission-config.yaml`\n\nThe API server must come back healthy.",
+      "solution": "    ssh cks3-control\n    sudo -i\n    ls /etc/kubernetes/admission/\n    vim /etc/kubernetes/admission/admission-config.yaml     # defaultAllow: false\n    vim /etc/kubernetes/manifests/kube-apiserver.yaml\n      # - --enable-admission-plugins=NodeRestriction,ImagePolicyWebhook\n      # - --admission-control-config-file=/etc/kubernetes/admission/admission-config.yaml\n      # and mount /etc/kubernetes/admission into the container (hostPath + volumeMount, readOnly)\n    exit; exit\n    kubectl get nodes\n\n`defaultAllow: true` is fail-open: any webhook outage lets every image through. The kubeconfig inside the admission configuration is what tells the API server where the webhook lives and how to authenticate to it.",
+      "references": [
+        {
+          "title": "Admission controllers — ImagePolicyWebhook",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#imagepolicywebhook"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/admission/admission-config.yaml",
+          "matches": "defaultAllow:\\s*false",
+          "hint": "admission-config.yaml must set defaultAllow: false"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "matches": "--enable-admission-plugins=[^\\n]*ImagePolicyWebhook",
+          "hint": "kube-apiserver must enable the ImagePolicyWebhook admission plugin"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "matches": "--enable-admission-plugins=[^\\n]*NodeRestriction",
+          "hint": "keep NodeRestriction enabled"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--admission-control-config-file=/etc/kubernetes/admission/admission-config.yaml",
+          "hint": "kube-apiserver needs --admission-control-config-file=/etc/kubernetes/admission/admission-config.yaml"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-apiserver",
+          "hint": "the kube-apiserver manifest is broken"
+        }
+      ],
+      "ssh": "ssh cks3-control"
+    },
+    {
+      "title": "Static analysis triage",
+      "domain": "Supply Chain Security",
+      "weight": 6,
+      "context": "cks",
+      "text": "The directory `~/manifests/` on the base host holds four manifests (`a.yaml` … `d.yaml`) for namespace `tools`.\n\nAnalyse each with `kubesec scan`. Apply **only** the manifests with no critical findings; do not apply the others.",
+      "solution": "    for f in ~/manifests/*.yaml; do echo $f; kubesec scan $f | grep -E '\"message\"|\"id\": \"(Privileged|HostNetwork|HostPID)\"'; done\n    # loops are not simulated here: run kubesec scan on each file\n    kubesec scan ~/manifests/a.yaml    # Passed\n    kubesec scan ~/manifests/b.yaml    # Failed: Privileged\n    kubesec scan ~/manifests/c.yaml    # Passed\n    kubesec scan ~/manifests/d.yaml    # Failed: HostNetwork, HostPID\n    kubectl apply -f ~/manifests/a.yaml\n    kubectl apply -f ~/manifests/c.yaml\n\nA `critical` entry in the scoring makes the manifest fail regardless of the other points; `advise` entries are improvements, not blockers.",
+      "references": [
+        {
+          "title": "kubesec",
+          "url": "https://kubesec.io/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "tools",
+          "name": "metrics",
+          "hint": "a.yaml (pod metrics) has no critical findings and should be applied"
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "tools",
+          "name": "worker",
+          "hint": "c.yaml (deployment worker) has no critical findings and should be applied"
+        },
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "tools",
+          "name": "debug",
+          "exists": false,
+          "hint": "b.yaml (pod debug) is privileged and must not be applied"
+        },
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "tools",
+          "name": "netdiag",
+          "exists": false,
+          "hint": "d.yaml (pod netdiag) uses host namespaces and must not be applied"
+        }
+      ]
+    },
+    {
+      "title": "Always pull images",
+      "domain": "Supply Chain Security",
+      "weight": 5,
+      "context": "cks",
+      "text": "The Deployments `shop` and `blog` in namespace `web` use `imagePullPolicy: IfNotPresent`, so a node's cached image could be used even after the tag was updated in the registry. Set `imagePullPolicy: Always` on their containers. Both must remain available.",
+      "solution": "    kubectl -n web patch deployment shop -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"main\",\"imagePullPolicy\":\"Always\"}]}}}}'\n    kubectl -n web patch deployment blog -p '{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"name\":\"main\",\"imagePullPolicy\":\"Always\"}]}}}}'\n    kubectl -n web rollout status deployment shop\n    kubectl -n web rollout status deployment blog\n\nStrategic merge patches match containers by `name`, so this patch changes only the pull policy. The `AlwaysPullImages` admission plugin enforces the same thing cluster-wide.",
+      "references": [
+        {
+          "title": "Images — updating images",
+          "url": "https://kubernetes.io/docs/concepts/containers/images/#updating-images"
+        },
+        {
+          "title": "AlwaysPullImages admission plugin",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/#alwayspullimages"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "web",
+          "name": "shop",
+          "hint": "shop must use imagePullPolicy Always",
+          "assert": {
+            "spec.template.spec.containers[0].imagePullPolicy": "Always"
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "web",
+          "name": "blog",
+          "hint": "blog must use imagePullPolicy Always",
+          "assert": {
+            "spec.template.spec.containers[0].imagePullPolicy": "Always"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "namespace": "web",
+          "name": "shop",
+          "hint": "deployment shop is not available"
+        },
+        {
+          "type": "deploymentAvailable",
+          "namespace": "web",
+          "name": "blog",
+          "hint": "deployment blog is not available"
+        }
+      ]
+    },
+    {
+      "title": "Targeted audit policy",
+      "domain": "Monitoring, Logging and Runtime Security",
+      "weight": 7,
+      "context": "cks",
+      "text": "Configure API server auditing on `cks3-control` with a policy at `/etc/kubernetes/audit/policy.yaml` that:\n\n- logs changes to **pods in namespace `prod`** at the `Request` level\n- logs **nothing** (`None`) for everything else\n\nWrite the log to `/var/log/kubernetes/audit/audit.log` (`--audit-log-path`) and reference the policy with `--audit-log-maxage=7`. The API server must stay healthy.",
+      "solution": "    ssh cks3-control\n    sudo -i\n    mkdir -p /etc/kubernetes/audit /var/log/kubernetes/audit\n    vim /etc/kubernetes/audit/policy.yaml\n\n    apiVersion: audit.k8s.io/v1\n    kind: Policy\n    rules:\n    - level: Request\n      namespaces: [\"prod\"]\n      resources:\n      - group: \"\"\n        resources: [\"pods\"]\n    - level: None\n\n    vim /etc/kubernetes/manifests/kube-apiserver.yaml\n      # - --audit-policy-file=/etc/kubernetes/audit/policy.yaml\n      # - --audit-log-path=/var/log/kubernetes/audit/audit.log\n      # - --audit-log-maxage=7\n      # plus hostPath mounts for both directories\n    exit; exit\n\nThe first matching rule wins, so the specific `Request` rule must come before the catch-all `None`. A `None` catch-all keeps the log small and the sensitive-data footprint low.",
+      "references": [
+        {
+          "title": "Auditing — audit policy",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/#audit-policy"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/audit/policy.yaml",
+          "matches": "level:\\s*Request",
+          "hint": "the policy must log at level Request"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/audit/policy.yaml",
+          "contains": "pods",
+          "hint": "the Request rule must target pods"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/audit/policy.yaml",
+          "contains": "prod",
+          "hint": "the Request rule must be limited to namespace prod"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/audit/policy.yaml",
+          "matches": "level:\\s*None",
+          "hint": "everything else must be level None"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--audit-policy-file=/etc/kubernetes/audit/policy.yaml",
+          "hint": "kube-apiserver needs --audit-policy-file=/etc/kubernetes/audit/policy.yaml"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--audit-log-path=/var/log/kubernetes/audit/audit.log",
+          "hint": "kube-apiserver needs --audit-log-path=/var/log/kubernetes/audit/audit.log"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--audit-log-maxage=7",
+          "hint": "kube-apiserver needs --audit-log-maxage=7"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-apiserver",
+          "hint": "the kube-apiserver manifest is broken"
+        }
+      ],
+      "ssh": "ssh cks3-control"
+    },
+    {
+      "title": "Falco file output",
+      "domain": "Monitoring, Logging and Runtime Security",
+      "weight": 5,
+      "context": "cks",
+      "text": "Falco on `cks3-node1` only writes to syslog and stdout. Configure it (`/etc/falco/falco.yaml`) to also write events to the file `/var/log/falco/events.txt` (enable `file_output` with that `filename`), then restart Falco. The service must be running.",
+      "solution": "    ssh cks3-node1\n    sudo -i\n    vim /etc/falco/falco.yaml\n\n    file_output:\n      enabled: true\n      keep_alive: false\n      filename: /var/log/falco/events.txt\n\n    systemctl restart falco\n    systemctl status falco\n    exit; exit\n\n`falco.yaml` has one block per output channel (syslog, file, stdout, http, program); each is switched with `enabled`. Restart the service for the change to take effect.",
+      "references": [
+        {
+          "title": "Falco configuration",
+          "url": "https://falco.org/docs/reference/daemon/config-options/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks3-node1",
+          "path": "/etc/falco/falco.yaml",
+          "matches": "file_output:\\s*\\n\\s*enabled:\\s*true",
+          "hint": "file_output.enabled must be true in /etc/falco/falco.yaml"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks3-node1",
+          "path": "/etc/falco/falco.yaml",
+          "contains": "filename: /var/log/falco/events.txt",
+          "hint": "file_output.filename must be /var/log/falco/events.txt"
+        },
+        {
+          "type": "hostService",
+          "host": "cks3-node1",
+          "name": "falco",
+          "active": true,
+          "hint": "falco must be running"
+        }
+      ],
+      "ssh": "ssh cks3-node1"
+    },
+    {
+      "title": "Find the pod that mounts the host",
+      "domain": "Monitoring, Logging and Runtime Security",
+      "weight": 5,
+      "context": "cks",
+      "text": "One of the pods in namespace `ops` mounts the node's **root filesystem** (`/`) via a `hostPath` volume. Identify it and delete it. Leave the other pods in the namespace running.",
+      "solution": "    kubectl -n ops get pods -o yaml | grep -B3 -A3 hostPath\n    # or: kubectl -n ops get pods -o jsonpath='{range .items[*]}{.metadata.name}{\"\\t\"}{.spec.volumes[*].hostPath.path}{\"\\n\"}{end}'\n    kubectl -n ops delete pod node-tool\n\nA `hostPath` of `/` gives the container the whole node: kubelet credentials, other containers' filesystems, everything. Search for it the same way across all namespaces with `-A`.",
+      "references": [
+        {
+          "title": "Volumes — hostPath",
+          "url": "https://kubernetes.io/docs/concepts/storage/volumes/#hostpath"
+        },
+        {
+          "title": "Pod Security Standards — baseline (HostPath volumes)",
+          "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#baseline"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "ops",
+          "name": "node-tool",
+          "exists": false,
+          "hint": "pod node-tool mounts hostPath / and must be deleted"
+        },
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "ops",
+          "name": "logger",
+          "hint": "pod logger must be kept"
+        },
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "ops",
+          "name": "monitor",
+          "hint": "pod monitor must be kept"
+        }
+      ]
+    }
+  ]
+}

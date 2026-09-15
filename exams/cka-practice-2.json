@@ -1,0 +1,1264 @@
+{
+  "uuid": "c0a80101-0000-4000-8000-0000000c4a02",
+  "name": "Unofficial CKA Practice Exam 2",
+  "exam": "CKA",
+  "durationMinutes": 120,
+  "passPercent": 66,
+  "candidate": "candidate",
+  "clientVersion": "1.31.0",
+  "base": {
+    "hostname": "cka-base",
+    "ip": "10.0.0.5",
+    "files": {
+      "/opt/answers/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      }
+    },
+    "homeFiles": {
+      "README.txt": "Exam 2 base host. Answer files go under /opt/answers/.\nContexts: k8s (main cluster), k8s-ops (troubleshooting cluster).\n"
+    }
+  },
+  "contexts": {
+    "k8s": {
+      "cluster": "k8s",
+      "namespace": "default"
+    },
+    "k8s-ops": {
+      "cluster": "k8s-ops",
+      "namespace": "default"
+    }
+  },
+  "defaultContext": "k8s",
+  "clusters": {
+    "k8s": {
+      "version": "1.31.0",
+      "ageDays": 60,
+      "nodes": [
+        {
+          "name": "cka2-control",
+          "roles": [
+            "control-plane"
+          ],
+          "ip": "10.0.1.11"
+        },
+        {
+          "name": "cka2-node1",
+          "ip": "10.0.1.12",
+          "labels": {
+            "zone": "east"
+          }
+        },
+        {
+          "name": "cka2-node2",
+          "ip": "10.0.1.13",
+          "labels": {
+            "zone": "west"
+          }
+        },
+        {
+          "name": "cka2-node3",
+          "ip": "10.0.1.14",
+          "labels": {
+            "zone": "west",
+            "pool": "legacy"
+          },
+          "taints": [
+            {
+              "key": "pool",
+              "value": "legacy",
+              "effect": "NoSchedule"
+            }
+          ]
+        }
+      ],
+      "resources": [
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "payments"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "media"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "dev"
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "gateway",
+            "namespace": "payments",
+            "labels": {
+              "app": "gateway"
+            }
+          },
+          "spec": {
+            "replicas": 3,
+            "selector": {
+              "matchLabels": {
+                "app": "gateway"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "gateway"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.26",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Secret",
+          "metadata": {
+            "name": "license",
+            "namespace": "payments"
+          },
+          "type": "Opaque",
+          "data": {
+            "key": "TElDLTc3MzEtRUFTVA=="
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "catalog",
+            "namespace": "media",
+            "labels": {
+              "app": "catalog"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "catalog"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "catalog"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.26",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "media",
+            "namespace": "media",
+            "labels": {
+              "app": "media"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "media"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "media"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "media",
+            "namespace": "media"
+          },
+          "spec": {
+            "selector": {
+              "app": "media"
+            },
+            "ports": [
+              {
+                "port": 80,
+                "targetPort": 80
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "gateway.networking.k8s.io/v1",
+          "kind": "GatewayClass",
+          "metadata": {
+            "name": "nginx-gc"
+          },
+          "spec": {
+            "controllerName": "gateway.nginx.org/nginx-gateway-controller"
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "api",
+            "namespace": "dev",
+            "labels": {
+              "app": "api"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "api"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "api"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "sink",
+            "namespace": "dev",
+            "labels": {
+              "app": "other"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "main",
+                "image": "nginx:1.27"
+              }
+            ],
+            "nodeName": "cka2-node1"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "restricted",
+            "namespace": "dev",
+            "labels": {
+              "role": "restricted"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "main",
+                "image": "busybox:1.36",
+                "command": [
+                  "sleep",
+                  "3600"
+                ]
+              }
+            ],
+            "nodeName": "cka2-node1"
+          }
+        },
+        {
+          "apiVersion": "storage.k8s.io/v1",
+          "kind": "StorageClass",
+          "metadata": {
+            "name": "local-dyn"
+          },
+          "provisioner": "rancher.io/local-path",
+          "volumeBindingMode": "Immediate",
+          "reclaimPolicy": "Delete"
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "legacy",
+            "namespace": "payments",
+            "labels": {
+              "app": "legacy"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "legacy"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "legacy"
+                }
+              },
+              "spec": {
+                "nodeSelector": {
+                  "pool": "legacy"
+                },
+                "tolerations": [
+                  {
+                    "key": "pool",
+                    "operator": "Equal",
+                    "value": "legacy",
+                    "effect": "NoSchedule"
+                  }
+                ],
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "httpd:2.4",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "k8s-ops": {
+      "version": "1.31.0",
+      "ageDays": 25,
+      "nodes": [
+        {
+          "name": "ops2-control",
+          "roles": [
+            "control-plane"
+          ],
+          "ip": "10.0.1.21"
+        },
+        {
+          "name": "ops2-node1",
+          "ip": "10.0.1.22"
+        },
+        {
+          "name": "ops2-node2",
+          "ip": "10.0.1.23"
+        }
+      ],
+      "resources": [
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "ops"
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "queue",
+            "namespace": "ops",
+            "labels": {
+              "app": "queue"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "queue"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "queue"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "redis:7.2",
+                    "ports": [
+                      {
+                        "containerPort": 6379
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "hosts": {
+        "ops2-control": {
+          "editManifests": {
+            "kube-apiserver": {
+              "replace": [
+                [
+                  "--etcd-servers=",
+                  "--etcd-server="
+                ]
+              ]
+            },
+            "kube-scheduler": {
+              "replace": [
+                [
+                  "registry.k8s.io/kube-scheduler:v1.31.0",
+                  "registry.k8s.io/kube-scheduler:v1.31.0-broken"
+                ]
+              ]
+            }
+          }
+        },
+        "ops2-node1": {
+          "services": {
+            "kubelet": {
+              "active": false,
+              "journal": [
+                "E0903 07:41:12.001 1130 run.go:72] \"command failed\" err=\"failed to load kubelet config file, path: /var/lib/kubelet/config.yaml, error: failed to decode: no kind \\\"KubeletConfig\\\" is registered\""
+              ]
+            }
+          },
+          "files": {
+            "/var/lib/kubelet/config.yaml": "apiVersion: kubelet.config.k8s.io/v1beta1\nauthentication:\n  anonymous:\n    enabled: false\n  webhook:\n    enabled: true\nauthorization:\n  mode: Webhook\ncgroupDriver: systemd\nclusterDNS:\n- 10.96.0.10\nclusterDomain: cluster.local\ncontainerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock\nkind: KubeletConfig\nstaticPodPath: /etc/kubernetes/manifests\n"
+          }
+        }
+      }
+    }
+  },
+  "questions": [
+    {
+      "title": "ConfigMap and Secret as environment",
+      "domain": "Workloads & Scheduling",
+      "weight": 6,
+      "context": "k8s",
+      "text": "In namespace `dev`:\n\n- create a ConfigMap `app-config` with the key `APP_MODE=production`\n- create a Secret `app-secret` with the key `DB_PASS=s3cret`\n- create a Pod `app` (image `busybox:1.36`, command `sleep 3600`) that exposes `APP_MODE` from the ConfigMap and `DB_PASS` from the Secret as environment variables with the same names",
+      "solution": "    kubectl -n dev create configmap app-config --from-literal=APP_MODE=production\n    kubectl -n dev create secret generic app-secret --from-literal=DB_PASS=s3cret\n    kubectl -n dev run app --image=busybox:1.36 $do -- sleep 3600 > app.yaml\n    vim app.yaml\n\nAdd `env` to the container:\n\n    env:\n    - name: APP_MODE\n      valueFrom:\n        configMapKeyRef:\n          name: app-config\n          key: APP_MODE\n    - name: DB_PASS\n      valueFrom:\n        secretKeyRef:\n          name: app-secret\n          key: DB_PASS\n\nThen `kubectl apply -f app.yaml` and verify with `kubectl -n dev exec app -- env | grep -E 'APP_MODE|DB_PASS'`.",
+      "references": [
+        {
+          "title": "Configure a Pod to use a ConfigMap",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/"
+        },
+        {
+          "title": "Distribute credentials securely using Secrets",
+          "url": "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "cm",
+          "namespace": "dev",
+          "name": "app-config",
+          "hint": "configmap app-config must hold APP_MODE=production",
+          "assert": {
+            "data.APP_MODE": "production"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "secret",
+          "namespace": "dev",
+          "name": "app-secret",
+          "hint": "secret app-secret must hold DB_PASS=s3cret",
+          "assert": {
+            "data.DB_PASS": "czNjcmV0"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "dev",
+          "name": "app",
+          "hint": "pod app must take APP_MODE from configmap app-config",
+          "assert": {
+            "spec.containers[0].env": {
+              "anyMatch": {
+                "name": "APP_MODE",
+                "valueFrom.configMapKeyRef.name": "app-config",
+                "valueFrom.configMapKeyRef.key": "APP_MODE"
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "dev",
+          "name": "app",
+          "hint": "pod app must take DB_PASS from secret app-secret",
+          "assert": {
+            "spec.containers[0].env": {
+              "anyMatch": {
+                "name": "DB_PASS",
+                "valueFrom.secretKeyRef.name": "app-secret",
+                "valueFrom.secretKeyRef.key": "DB_PASS"
+              }
+            }
+          }
+        },
+        {
+          "type": "podsReady",
+          "cluster": "k8s",
+          "namespace": "dev",
+          "name": "app",
+          "hint": "pod app is not running"
+        }
+      ]
+    },
+    {
+      "title": "A Job with parallel completions",
+      "domain": "Workloads & Scheduling",
+      "weight": 4,
+      "context": "k8s",
+      "text": "Create a Job named `pi` in namespace `dev` using image `busybox:1.36` that runs `sh -c \"echo 3.14159\"`.\n\nThe Job must complete **2** times with a parallelism of **2**, and must have `backoffLimit: 4`. Wait until it has completed.",
+      "solution": "    kubectl -n dev create job pi --image=busybox:1.36 $do -- sh -c \"echo 3.14159\" > pi.yaml\n    vim pi.yaml     # add under spec:  completions: 2, parallelism: 2, backoffLimit: 4\n    kubectl apply -f pi.yaml\n    kubectl -n dev get job pi -w\n\n`kubectl create job` has no flags for completions or parallelism, so generating YAML and editing is the normal route. `kubectl -n dev logs job/pi` shows the output.",
+      "references": [
+        {
+          "title": "Jobs",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "job",
+          "namespace": "dev",
+          "name": "pi",
+          "hint": "job pi needs completions 2, parallelism 2, backoffLimit 4, image busybox:1.36",
+          "assert": {
+            "spec.completions": 2,
+            "spec.parallelism": 2,
+            "spec.backoffLimit": 4,
+            "spec.template.spec.containers[0].image": "busybox:1.36"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "job",
+          "namespace": "dev",
+          "name": "pi",
+          "hint": "job pi has not completed 2 times yet",
+          "assert": {
+            "status.succeeded": {
+              "gte": 2
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "A CronJob",
+      "domain": "Workloads & Scheduling",
+      "weight": 4,
+      "context": "k8s",
+      "text": "Create a CronJob named `backup` in namespace `dev` with image `busybox:1.36` running `sh -c \"echo backup\"` every 5 minutes (`*/5 * * * *`).\n\nSet `concurrencyPolicy: Forbid` and keep only `2` successful jobs in history.",
+      "solution": "    kubectl -n dev create cronjob backup --image=busybox:1.36 --schedule=\"*/5 * * * *\" $do -- sh -c \"echo backup\" > backup.yaml\n    vim backup.yaml    # under spec: add concurrencyPolicy: Forbid and successfulJobsHistoryLimit: 2\n    kubectl apply -f backup.yaml\n    kubectl -n dev get cronjob backup",
+      "references": [
+        {
+          "title": "CronJob",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "cronjob",
+          "namespace": "dev",
+          "name": "backup",
+          "hint": "cronjob backup: schedule */5 * * * *, concurrencyPolicy Forbid, successfulJobsHistoryLimit 2, image busybox:1.36",
+          "assert": {
+            "spec.schedule": "*/5 * * * *",
+            "spec.concurrencyPolicy": "Forbid",
+            "spec.successfulJobsHistoryLimit": 2,
+            "spec.jobTemplate.spec.template.spec.containers[0].image": "busybox:1.36"
+          }
+        }
+      ]
+    },
+    {
+      "title": "StatefulSet with a headless Service",
+      "domain": "Workloads & Scheduling",
+      "weight": 7,
+      "context": "k8s",
+      "text": "In namespace `media` create:\n\n- a headless Service named `db` (clusterIP `None`) selecting `app=db` on port `6379`\n- a StatefulSet named `db` with `2` replicas, image `redis:7.2`, container port `6379`, labels `app=db`, using `serviceName: db`\n\nBoth pods (`db-0`, `db-1`) must be running.",
+      "solution": "    apiVersion: v1\n    kind: Service\n    metadata:\n      name: db\n      namespace: media\n    spec:\n      clusterIP: None\n      selector:\n        app: db\n      ports:\n      - port: 6379\n        targetPort: 6379\n    ---\n    apiVersion: apps/v1\n    kind: StatefulSet\n    metadata:\n      name: db\n      namespace: media\n    spec:\n      serviceName: db\n      replicas: 2\n      selector:\n        matchLabels:\n          app: db\n      template:\n        metadata:\n          labels:\n            app: db\n        spec:\n          containers:\n          - name: redis\n            image: redis:7.2\n            ports:\n            - containerPort: 6379\n\nStatefulSets create pods one at a time in order (`db-0`, then `db-1` once `db-0` is Ready); the headless Service gives each pod a stable DNS name like `db-0.db.media.svc.cluster.local`.",
+      "references": [
+        {
+          "title": "StatefulSets",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/"
+        },
+        {
+          "title": "Headless Services",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/service/#headless-services"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "svc",
+          "namespace": "media",
+          "name": "db",
+          "hint": "service db must be headless (clusterIP None), select app=db, port 6379",
+          "assert": {
+            "spec.clusterIP": "None",
+            "spec.selector.app": "db",
+            "spec.ports[0].port": 6379
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "sts",
+          "namespace": "media",
+          "name": "db",
+          "hint": "statefulset db must have 2 replicas, serviceName db, image redis:7.2",
+          "assert": {
+            "spec.replicas": 2,
+            "spec.serviceName": "db",
+            "spec.template.spec.containers[0].image": "redis:7.2"
+          }
+        },
+        {
+          "type": "podsReady",
+          "cluster": "k8s",
+          "namespace": "media",
+          "selector": "app=db",
+          "count": 2,
+          "hint": "db-0 and db-1 are not both running"
+        }
+      ]
+    },
+    {
+      "title": "Horizontal Pod Autoscaler",
+      "domain": "Workloads & Scheduling",
+      "weight": 4,
+      "context": "k8s",
+      "text": "Create a HorizontalPodAutoscaler for the Deployment `gateway` in namespace `payments` that keeps between `2` and `6` replicas, targeting `70%` average CPU utilization.",
+      "solution": "    kubectl -n payments autoscale deployment gateway --min=2 --max=6 --cpu-percent=70\n    kubectl -n payments get hpa\n\nThis creates an `autoscaling/v2` HPA with a `Resource` metric of type `Utilization`. The TARGETS column shows `<unknown>` until metrics-server has samples for the pods.",
+      "references": [
+        {
+          "title": "Horizontal Pod Autoscaling",
+          "url": "https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "hpa",
+          "namespace": "payments",
+          "name": "gateway",
+          "hint": "hpa gateway must target deployment gateway, min 2, max 6, 70% CPU",
+          "assert": {
+            "spec.scaleTargetRef.name": "gateway",
+            "spec.minReplicas": 2,
+            "spec.maxReplicas": 6,
+            "spec.metrics[0].resource.target.averageUtilization": 70
+          }
+        }
+      ]
+    },
+    {
+      "title": "Rolling update and history",
+      "domain": "Workloads & Scheduling",
+      "weight": 5,
+      "context": "k8s",
+      "text": "Update the Deployment `catalog` in namespace `media` to image `nginx:1.27` using a rolling update, and wait until it is fully rolled out.\n\nThen write the **number of revisions** shown by `kubectl rollout history` for this Deployment into `/opt/answers/catalog-revisions.txt` on the base host.",
+      "solution": "    kubectl -n media set image deployment/catalog main=nginx:1.27\n    kubectl -n media rollout status deployment catalog\n    kubectl -n media rollout history deployment catalog     # REVISION 1 and 2\n    echo 2 > /opt/answers/catalog-revisions.txt\n\nEach template change creates a new ReplicaSet and a new revision; `rollout undo` would go back to revision 1.",
+      "references": [
+        {
+          "title": "Updating a Deployment",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#updating-a-deployment"
+        },
+        {
+          "title": "Checking rollout history",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#checking-rollout-history-of-a-deployment"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "deployment",
+          "namespace": "media",
+          "name": "catalog",
+          "hint": "catalog must run image nginx:1.27",
+          "assert": {
+            "spec.template.spec.containers[0].image": "nginx:1.27"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "k8s",
+          "namespace": "media",
+          "name": "catalog",
+          "hint": "catalog is not fully rolled out"
+        },
+        {
+          "type": "hostFile",
+          "host": "cka-base",
+          "path": "/opt/answers/catalog-revisions.txt",
+          "equals": "2",
+          "hint": "/opt/answers/catalog-revisions.txt must contain the revision count (2)"
+        }
+      ]
+    },
+    {
+      "title": "Node affinity",
+      "domain": "Workloads & Scheduling",
+      "weight": 5,
+      "context": "k8s",
+      "text": "The nodes carry a `zone` label (`east` / `west`). Create a Pod `east-pod` in namespace `default` with image `nginx:1.27` that uses **required node affinity** (not a nodeSelector) so it can only run on nodes where `zone` is `east`. It must be running.",
+      "solution": "    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: east-pod\n    spec:\n      affinity:\n        nodeAffinity:\n          requiredDuringSchedulingIgnoredDuringExecution:\n            nodeSelectorTerms:\n            - matchExpressions:\n              - key: zone\n                operator: In\n                values:\n                - east\n      containers:\n      - name: nginx\n        image: nginx:1.27\n\n`kubectl get nodes -L zone` shows which node is east; `kubectl get pod east-pod -o wide` confirms placement.",
+      "references": [
+        {
+          "title": "Node affinity",
+          "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#node-affinity"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "east-pod",
+          "hint": "east-pod must use requiredDuringSchedulingIgnoredDuringExecution node affinity, not nodeSelector",
+          "assert": {
+            "spec.affinity.nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution": {
+              "exists": true
+            },
+            "spec.nodeSelector": {
+              "exists": false
+            }
+          }
+        },
+        {
+          "type": "podOnNode",
+          "cluster": "k8s",
+          "namespace": "default",
+          "name": "east-pod",
+          "nodeLabel": {
+            "zone": "east"
+          },
+          "hint": "east-pod is not running on the zone=east node"
+        }
+      ]
+    },
+    {
+      "title": "Egress NetworkPolicy",
+      "domain": "Services & Networking",
+      "weight": 8,
+      "context": "k8s",
+      "text": "In namespace `dev` the Pod `restricted` (label `role=restricted`) must only be able to open **egress** connections to:\n\n- pods labelled `app=api` in the same namespace on TCP port `80`\n- DNS (UDP and TCP port `53`) in namespace `kube-system`\n\nCreate a NetworkPolicy named `restrict-egress` in `dev` that enforces this. Test pods: `api` (Deployment, `app=api`) should be reachable, `sink` (`app=other`) must not.",
+      "solution": "    apiVersion: networking.k8s.io/v1\n    kind: NetworkPolicy\n    metadata:\n      name: restrict-egress\n      namespace: dev\n    spec:\n      podSelector:\n        matchLabels:\n          role: restricted\n      policyTypes:\n      - Egress\n      egress:\n      - to:\n        - podSelector:\n            matchLabels:\n              app: api\n        ports:\n        - protocol: TCP\n          port: 80\n      - to:\n        - namespaceSelector:\n            matchLabels:\n              kubernetes.io/metadata.name: kube-system\n        ports:\n        - protocol: UDP\n          port: 53\n        - protocol: TCP\n          port: 53\n\nWithout the DNS rule the pod could no longer resolve service names. Verify: `kubectl -n dev exec restricted -- wget -qO- --timeout=2 api` works, `... sink` times out.",
+      "references": [
+        {
+          "title": "Network Policies — egress",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/#networkpolicy-resource"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "netpol",
+          "namespace": "dev",
+          "name": "restrict-egress",
+          "hint": "restrict-egress must select role=restricted and be an Egress policy",
+          "assert": {
+            "spec.podSelector.matchLabels.role": "restricted",
+            "spec.policyTypes": {
+              "contains": "Egress"
+            }
+          }
+        },
+        {
+          "type": "connectivity",
+          "cluster": "k8s",
+          "to": {
+            "namespace": "dev",
+            "selector": "app=api"
+          },
+          "port": 80,
+          "expect": true,
+          "hint": "restricted must still reach app=api on port 80",
+          "from": {
+            "namespace": "dev",
+            "name": "restricted"
+          }
+        },
+        {
+          "type": "connectivity",
+          "cluster": "k8s",
+          "to": {
+            "namespace": "dev",
+            "selector": "app=other"
+          },
+          "port": 80,
+          "expect": false,
+          "hint": "restricted must be blocked from reaching app=other",
+          "from": {
+            "namespace": "dev",
+            "name": "restricted"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Dynamic volume provisioning",
+      "domain": "Storage",
+      "weight": 6,
+      "context": "k8s",
+      "text": "A StorageClass `local-dyn` exists. In namespace `payments` create a PersistentVolumeClaim `data-dyn` requesting `2Gi` with access mode `ReadWriteOnce` using that class, and a Pod `writer` (image `busybox:1.36`, command `sleep 3600`) that mounts the claim at `/data`.\n\nThe claim must be Bound and the pod running.",
+      "solution": "    apiVersion: v1\n    kind: PersistentVolumeClaim\n    metadata:\n      name: data-dyn\n      namespace: payments\n    spec:\n      storageClassName: local-dyn\n      accessModes:\n      - ReadWriteOnce\n      resources:\n        requests:\n          storage: 2Gi\n    ---\n    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: writer\n      namespace: payments\n    spec:\n      volumes:\n      - name: data\n        persistentVolumeClaim:\n          claimName: data-dyn\n      containers:\n      - name: main\n        image: busybox:1.36\n        command: [\"sleep\", \"3600\"]\n        volumeMounts:\n        - name: data\n          mountPath: /data\n\nWith a dynamic StorageClass nobody creates the PersistentVolume by hand: the provisioner creates a `pvc-<uid>` volume and binds it. `kubectl get pv,pvc -n payments` shows both.",
+      "references": [
+        {
+          "title": "Dynamic Volume Provisioning",
+          "url": "https://kubernetes.io/docs/concepts/storage/dynamic-provisioning/"
+        },
+        {
+          "title": "Persistent Volumes — claims",
+          "url": "https://kubernetes.io/docs/concepts/storage/persistent-volumes/#persistentvolumeclaims"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pvc",
+          "namespace": "payments",
+          "name": "data-dyn",
+          "hint": "pvc data-dyn must request 2Gi ReadWriteOnce from class local-dyn",
+          "assert": {
+            "spec.storageClassName": "local-dyn",
+            "spec.resources.requests.storage": "2Gi",
+            "spec.accessModes": {
+              "contains": "ReadWriteOnce"
+            }
+          }
+        },
+        {
+          "type": "pvcBound",
+          "cluster": "k8s",
+          "namespace": "payments",
+          "name": "data-dyn",
+          "hint": "pvc data-dyn is not Bound"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "pod",
+          "namespace": "payments",
+          "name": "writer",
+          "hint": "pod writer must mount data-dyn at /data",
+          "assert": {
+            "spec.volumes": {
+              "anyMatch": {
+                "persistentVolumeClaim.claimName": "data-dyn"
+              }
+            },
+            "spec.containers[0].volumeMounts": {
+              "anyMatch": {
+                "mountPath": "/data"
+              }
+            }
+          }
+        },
+        {
+          "type": "podsReady",
+          "cluster": "k8s",
+          "namespace": "payments",
+          "name": "writer",
+          "hint": "pod writer is not running"
+        }
+      ]
+    },
+    {
+      "title": "Cluster-wide RBAC for a user",
+      "domain": "Cluster Architecture, Installation & Configuration",
+      "weight": 5,
+      "context": "k8s",
+      "text": "Create a ClusterRole `node-viewer` that allows `get`, `list` and `watch` on `nodes`, and a ClusterRoleBinding `node-viewer-dave` that grants it to the user `dave`.\n\n`dave` must not be able to delete nodes.",
+      "solution": "    kubectl create clusterrole node-viewer --verb=get,list,watch --resource=nodes\n    kubectl create clusterrolebinding node-viewer-dave --clusterrole=node-viewer --user=dave\n    kubectl auth can-i list nodes --as dave      # yes\n    kubectl auth can-i delete nodes --as dave    # no\n\nNodes are cluster-scoped, so a namespaced Role cannot grant access to them — this needs a ClusterRole and a ClusterRoleBinding.",
+      "references": [
+        {
+          "title": "Using RBAC Authorization — ClusterRole",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/#role-and-clusterrole"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "clusterrole",
+          "name": "node-viewer",
+          "hint": "clusterrole node-viewer missing"
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "clusterrolebinding",
+          "name": "node-viewer-dave",
+          "hint": "clusterrolebinding node-viewer-dave must bind clusterrole node-viewer to user dave",
+          "assert": {
+            "subjects": {
+              "anyMatch": {
+                "kind": "User",
+                "name": "dave"
+              }
+            },
+            "roleRef.name": "node-viewer"
+          }
+        },
+        {
+          "type": "canI",
+          "cluster": "k8s",
+          "verb": "list",
+          "resource": "nodes",
+          "expect": true,
+          "hint": "dave cannot list nodes",
+          "as": "dave"
+        },
+        {
+          "type": "canI",
+          "cluster": "k8s",
+          "verb": "delete",
+          "resource": "nodes",
+          "expect": false,
+          "hint": "dave must not be able to delete nodes",
+          "as": "dave"
+        }
+      ]
+    },
+    {
+      "title": "Gateway API",
+      "domain": "Services & Networking",
+      "weight": 7,
+      "context": "k8s",
+      "text": "A GatewayClass `nginx-gc` exists. In namespace `media` there is a Deployment `media` exposed by Service `media` on port `80`.\n\nCreate a Gateway named `main-gw` in `media` using that class with one HTTP listener named `http` on port `80`, and an HTTPRoute named `media-route` in `media` attached to `main-gw` that routes host `media.example.com` to Service `media` port `80`.",
+      "solution": "    apiVersion: gateway.networking.k8s.io/v1\n    kind: Gateway\n    metadata:\n      name: main-gw\n      namespace: media\n    spec:\n      gatewayClassName: nginx-gc\n      listeners:\n      - name: http\n        protocol: HTTP\n        port: 80\n    ---\n    apiVersion: gateway.networking.k8s.io/v1\n    kind: HTTPRoute\n    metadata:\n      name: media-route\n      namespace: media\n    spec:\n      parentRefs:\n      - name: main-gw\n      hostnames:\n      - media.example.com\n      rules:\n      - backendRefs:\n        - name: media\n          port: 80\n\nGateway API splits what Ingress bundled: the GatewayClass is the implementation, the Gateway is the listener, and HTTPRoutes attach to it via `parentRefs`.",
+      "references": [
+        {
+          "title": "Gateway API",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/gateway/"
+        },
+        {
+          "title": "HTTPRoute reference (gateway-api.sigs.k8s.io)",
+          "url": "https://gateway-api.sigs.k8s.io/reference/api-types/httproute/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "gateway",
+          "namespace": "media",
+          "name": "main-gw",
+          "hint": "gateway main-gw must use class nginx-gc with an HTTP listener 'http' on port 80",
+          "assert": {
+            "spec.gatewayClassName": "nginx-gc",
+            "spec.listeners": {
+              "anyMatch": {
+                "name": "http",
+                "protocol": "HTTP",
+                "port": 80
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "k8s",
+          "kind": "httproute",
+          "namespace": "media",
+          "name": "media-route",
+          "hint": "httproute media-route must attach to main-gw, match media.example.com, and route to service media:80",
+          "assert": {
+            "spec.parentRefs": {
+              "anyMatch": {
+                "name": "main-gw"
+              }
+            },
+            "spec.hostnames": {
+              "contains": "media.example.com"
+            },
+            "spec.rules[0].backendRefs": {
+              "anyMatch": {
+                "name": "media",
+                "port": 80
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Extract a value with jsonpath",
+      "domain": "Troubleshooting",
+      "weight": 3,
+      "context": "k8s",
+      "text": "Using `kubectl` with a **jsonpath** output, write the InternalIP address of node `cka2-node1` into `/opt/answers/node1-ip.txt` on the base host (the address only, nothing else).",
+      "solution": "    kubectl get node cka2-node1 -o jsonpath='{.status.addresses[?(@.type==\"InternalIP\")].address}' > /opt/answers/node1-ip.txt\n    cat /opt/answers/node1-ip.txt\n\nThe `[?(@.type==\"InternalIP\")]` filter picks the matching entry from the addresses list. Explore the structure first with `kubectl get node cka2-node1 -o yaml`.",
+      "references": [
+        {
+          "title": "JSONPath Support",
+          "url": "https://kubernetes.io/docs/reference/kubectl/jsonpath/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cka-base",
+          "path": "/opt/answers/node1-ip.txt",
+          "equals": "10.0.1.12",
+          "hint": "/opt/answers/node1-ip.txt must contain exactly the InternalIP of cka2-node1"
+        }
+      ]
+    },
+    {
+      "title": "Decode a Secret",
+      "domain": "Troubleshooting",
+      "weight": 4,
+      "context": "k8s",
+      "text": "The Secret `license` in namespace `payments` holds a key named `key`. Write its **decoded** value into `/opt/answers/license.txt` on the base host.",
+      "solution": "    kubectl -n payments get secret license -o jsonpath='{.data.key}' | base64 -d > /opt/answers/license.txt\n    cat /opt/answers/license.txt\n\nSecret data is base64-encoded, not encrypted; `base64 -d` reverses it. `kubectl get secret ... -o yaml` shows the encoded form.",
+      "references": [
+        {
+          "title": "Secrets",
+          "url": "https://kubernetes.io/docs/concepts/configuration/secret/"
+        },
+        {
+          "title": "Managing Secrets using kubectl",
+          "url": "https://kubernetes.io/docs/tasks/configmap-secret/managing-secret-using-kubectl/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cka-base",
+          "path": "/opt/answers/license.txt",
+          "equals": "LIC-7731-EAST",
+          "hint": "/opt/answers/license.txt must contain the decoded license key"
+        }
+      ]
+    },
+    {
+      "title": "Drain a node for maintenance",
+      "domain": "Cluster Architecture, Installation & Configuration",
+      "weight": 5,
+      "context": "k8s",
+      "text": "Node `cka2-node3` (the `pool=legacy` node) needs maintenance. Make it unschedulable and evict all workloads from it (DaemonSet pods may stay). Leave the node cordoned when you are done.\n\nIt is expected that the evicted `legacy` pods cannot be scheduled elsewhere afterwards.",
+      "solution": "    kubectl get pods -A -o wide | grep cka2-node3\n    kubectl drain cka2-node3 --ignore-daemonsets --delete-emptydir-data\n    kubectl get nodes                        # cka2-node3 Ready,SchedulingDisabled\n    kubectl get pods -A -o wide | grep cka2-node3   # only DaemonSet pods remain\n\n`drain` cordons first, then evicts pods; their controllers recreate them elsewhere — here the `legacy` pods stay Pending because only this node tolerates their taint, which is fine for the task. If a node runs pods that no controller manages, `drain` refuses unless you add `--force` (which deletes them for good). `kubectl uncordon cka2-node3` would reopen the node afterwards; this task says to leave it cordoned.",
+      "references": [
+        {
+          "title": "Safely Drain a Node",
+          "url": "https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "nodeSchedulable",
+          "cluster": "k8s",
+          "node": "cka2-node3",
+          "schedulable": false,
+          "hint": "cka2-node3 must be cordoned"
+        },
+        {
+          "type": "nodeEmpty",
+          "cluster": "k8s",
+          "node": "cka2-node3",
+          "ignoreDaemonSets": true,
+          "hint": "workload pods are still running on cka2-node3"
+        }
+      ]
+    },
+    {
+      "title": "API server down",
+      "domain": "Troubleshooting",
+      "weight": 10,
+      "context": "k8s-ops",
+      "text": "`kubectl` commands against cluster `k8s-ops` fail with a connection error. The control plane node is `ops2-control`.\n\nFind the cause and fix it so that `kubectl get nodes` works again against `k8s-ops`.",
+      "solution": "    kubectl config use-context k8s-ops\n    kubectl get nodes                     # The connection to the server 10.0.1.21:6443 was refused\n    ssh ops2-control\n    sudo -i\n    systemctl status kubelet              # running — so the static pod itself is the problem\n    crictl ps -a | grep apiserver         # container keeps exiting\n    vim /etc/kubernetes/manifests/kube-apiserver.yaml\n\nOne flag is misspelled: `--etcd-server=` must be `--etcd-servers=`. Fix it and save; the kubelet notices the manifest change and restarts the static pod within seconds. Then `exit` twice and re-run `kubectl get nodes`.\n\nWhen the API server is down there is no `kubectl`: you work from the node with the manifest files under `/etc/kubernetes/manifests/`, the kubelet logs (`journalctl -u kubelet`), and `crictl`.",
+      "references": [
+        {
+          "title": "Troubleshooting kubeadm",
+          "url": "https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/troubleshooting-kubeadm/"
+        },
+        {
+          "title": "Static Pods",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "staticPodHealthy",
+          "cluster": "k8s-ops",
+          "component": "kube-apiserver",
+          "hint": "the kube-apiserver static pod manifest on ops2-control is still broken"
+        },
+        {
+          "type": "apiHealthy",
+          "cluster": "k8s-ops",
+          "hint": "the k8s-ops API server is still unreachable"
+        }
+      ],
+      "ssh": "ssh ops2-control"
+    },
+    {
+      "title": "Kubelet will not start",
+      "domain": "Troubleshooting",
+      "weight": 8,
+      "context": "k8s-ops",
+      "text": "Node `ops2-node1` in cluster `k8s-ops` is `NotReady`. Starting the kubelet fails. Investigate on the node, fix the root cause, and bring the node back to `Ready` with the kubelet enabled.",
+      "solution": "    ssh ops2-node1\n    sudo -i\n    systemctl status kubelet                  # activating (auto-restart) / failed\n    journalctl -u kubelet -n 20 --no-pager    # failed to load kubelet config file ... no kind \"KubeletConfig\" is registered\n    vim /var/lib/kubelet/config.yaml          # kind: KubeletConfig  ->  kind: KubeletConfiguration\n    systemctl enable --now kubelet\n    systemctl restart kubelet\n    systemctl status kubelet                  # active (running)\n    exit; exit\n    kubectl get nodes                         # ops2-node1 Ready\n\nThe kubelet's own log is the fastest path to a broken-config diagnosis; typical culprits are `/var/lib/kubelet/config.yaml`, the paths in `/etc/systemd/system/kubelet.service.d/10-kubeadm.conf`, and certificates under `/var/lib/kubelet/pki`.",
+      "references": [
+        {
+          "title": "Troubleshooting Clusters",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/"
+        },
+        {
+          "title": "Kubelet configuration (v1beta1)",
+          "url": "https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostService",
+          "host": "ops2-node1",
+          "name": "kubelet",
+          "active": true,
+          "enabled": true,
+          "hint": "kubelet on ops2-node1 must be running and enabled"
+        },
+        {
+          "type": "nodeReady",
+          "cluster": "k8s-ops",
+          "node": "ops2-node1",
+          "hint": "ops2-node1 is still NotReady"
+        }
+      ],
+      "ssh": "ssh ops2-node1"
+    },
+    {
+      "title": "Pods stuck in Pending",
+      "domain": "Troubleshooting",
+      "weight": 9,
+      "context": "k8s-ops",
+      "text": "In cluster `k8s-ops`, the pods of Deployment `queue` in namespace `ops` are stuck in `Pending` and new pods never get scheduled anywhere.\n\nFind the cause on the control plane node `ops2-control` and fix it so that all `queue` pods run. (Fix the API server first if you have not already.)",
+      "solution": "    kubectl -n ops describe pod <queue-pod>      # no events at all — nothing is scheduling\n    kubectl -n kube-system get pods              # kube-scheduler-ops2-control in CrashLoopBackOff\n    ssh ops2-control\n    sudo -i\n    vim /etc/kubernetes/manifests/kube-scheduler.yaml   # image tag is v1.31.0-broken -> v1.31.0\n    exit; exit\n    kubectl -n kube-system get pods              # scheduler Running\n    kubectl -n ops get pods                      # queue pods Running\n\nWhen every new pod stays Pending with no `Scheduled`/`FailedScheduling` event, suspect the scheduler itself rather than the pods.",
+      "references": [
+        {
+          "title": "Debug Pods — pending pods",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-pods/#my-pod-stays-pending"
+        },
+        {
+          "title": "Kubernetes Scheduler",
+          "url": "https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "staticPodHealthy",
+          "cluster": "k8s-ops",
+          "component": "kube-scheduler",
+          "hint": "the kube-scheduler static pod manifest on ops2-control is still broken"
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "k8s-ops",
+          "namespace": "ops",
+          "name": "queue",
+          "hint": "not all queue pods are running"
+        }
+      ],
+      "ssh": "ssh ops2-control"
+    }
+  ]
+}

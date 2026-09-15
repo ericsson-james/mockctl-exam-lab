@@ -1,0 +1,34 @@
+{
+  "name": "mockctl-exam-lab",
+  "version": "0.2.0",
+  "description": "mockctl exam lab: a free, browser-only practice environment modeled on the CKA and CKS exam formats. Simulated clusters, kubectl, node tooling, security tooling, timed questions and grading. No network calls. Not affiliated with The Linux Foundation or CNCF.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "check": "node build.mjs && node --check dist/bundle.js",
+    "test": "node build.mjs && node --check dist/bundle.js && node test/smoke.mjs",
+    "deploy": "node build.mjs && wrangler deploy"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ericsson-james/mockctl-exam-lab"
+  },
+  "keywords": [
+    "kubernetes",
+    "cka",
+    "cks",
+    "practice",
+    "exam",
+    "simulator",
+    "education",
+    "terminal",
+    "security"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "wrangler": "4.131.2"
+  }
+}

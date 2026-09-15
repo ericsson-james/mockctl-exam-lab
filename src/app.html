@@ -1,0 +1,41 @@
+<header>
+  <span class="brand"><b>mockctl exam lab</b> &nbsp;·&nbsp; <span id="examTitle">unofficial practice environment</span></span>
+  <span class="hright">
+    <span id="examTimer" class="timer" title="time remaining">--:--</span>
+    <button id="examEnd" class="endbtn">End exam</button>
+  </span>
+</header>
+<main>
+  <aside id="examPanel" hidden>
+    <div id="examNav" class="qnav"></div>
+    <div id="examBody" class="qbody"></div>
+  </aside>
+  <section id="termWrap">
+    <div id="term">
+      <div id="out"></div>
+      <div id="promptRow">
+        <span id="ps1"></span><input id="cmd" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="terminal input">
+      </div>
+    </div>
+    <div id="vim" hidden>
+      <pre id="vimText"></pre>
+      <div id="vimStatus"><span id="vimLeft"></span><span id="vimRight"></span></div>
+      <div id="vimCmd"></div>
+    </div>
+  </section>
+</main>
+<div id="solutionOverlay" class="overlay" hidden>
+  <div class="modal solution-modal">
+    <div class="modal-head">
+      <span id="solutionTitle" class="modal-title"></span>
+      <button id="solutionClose">Close</button>
+    </div>
+    <div id="solutionBody" class="qsolution"></div>
+  </div>
+</div>
+<div id="examOverlay" class="overlay" hidden>
+  <div class="modal">
+    <div id="examResults"></div>
+    <button id="examOverlayClose" class="primary">Back to the terminal</button>
+  </div>
+</div>

@@ -1,0 +1,1560 @@
+{
+  "uuid": "c0a80101-0000-4000-8000-0000000c4501",
+  "name": "Unofficial CKS Practice Exam 1",
+  "exam": "CKS",
+  "durationMinutes": 120,
+  "passPercent": 67,
+  "candidate": "candidate",
+  "clientVersion": "1.31.0",
+  "base": {
+    "hostname": "cks-base",
+    "ip": "10.0.0.6",
+    "files": {
+      "/opt/answers/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/opt/tls/tls.crt": "-----BEGIN CERTIFICATE-----\nMIIDazCCAlOgAwIBAgIUQ5m3n8Vh1K2jtR0fPz9m3qjLZk0wDQYJKoZIhvcNAQEL\nBQAwRTELMAkGA1UEBhMCVVMxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoM\nGEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yNjA5MDEwMDAwMDBaFw0yNzA5\nMDEwMDAwMDBaMBcxFTATBgNVBAMMDHdlYi5wcm9kLmxvY2FsMIIBIjANBgkqhkiG\n9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu1SU1LfVLPHCozMxH2Mo4lgOEePzNm0tRgeL\n-----END CERTIFICATE-----\n",
+      "/opt/tls/tls.key": {
+        "content": "{{pem:PRIVATE KEY:web.prod.local}}",
+        "mode": "644"
+      }
+    },
+    "homeFiles": {
+      "README.txt": "CKS practice base host. Certificates for TLS tasks are under /opt/tls/.\nSecurity tools available here and on nodes: trivy, kubesec, kube-bench (nodes), apparmor_parser (nodes), sha256sum.\n",
+      "hardened-pod.yaml": "apiVersion: v1\nkind: Pod\nmetadata:\n  name: hardened\nspec:\n  containers:\n  - name: app\n    image: nginx:1.27\n    securityContext:\n      privileged: true\n"
+    }
+  },
+  "contexts": {
+    "cks": {
+      "cluster": "cks",
+      "namespace": "default"
+    }
+  },
+  "defaultContext": "cks",
+  "trivy": {
+    "nginx:1.27": {
+      "critical": 0,
+      "high": 2,
+      "medium": 5,
+      "low": 3
+    },
+    "docker.io/legacy/app:2.3": {
+      "critical": 3,
+      "high": 7,
+      "medium": 12,
+      "low": 4,
+      "cves": [
+        {
+          "pkg": "openssl",
+          "id": "CVE-2024-5535",
+          "installed": "3.0.11",
+          "fixed": "3.0.14",
+          "title": "openssl: SSL_select_next_proto buffer overread"
+        },
+        {
+          "pkg": "libcurl4",
+          "id": "CVE-2024-6197",
+          "installed": "8.5.0",
+          "fixed": "8.9.0",
+          "title": "curl: freeing stack buffer in utf8asn1str"
+        },
+        {
+          "pkg": "glibc",
+          "id": "CVE-2024-2961",
+          "installed": "2.36-9",
+          "fixed": "2.36-9+deb12u7",
+          "title": "glibc: iconv buffer overflow"
+        }
+      ]
+    },
+    "redis:7.2": {
+      "critical": 0,
+      "high": 1,
+      "medium": 3,
+      "low": 2
+    },
+    "docker.io/vendor/tool:1.0": {
+      "critical": 1,
+      "high": 4,
+      "medium": 6,
+      "low": 1,
+      "cves": [
+        {
+          "pkg": "zlib1g",
+          "id": "CVE-2023-45853",
+          "installed": "1.2.13",
+          "fixed": "1.3",
+          "title": "zlib: integer overflow in zipOpenNewFileInZip4_64"
+        }
+      ]
+    },
+    "docker.io/acme/chat:4.1": {
+      "critical": 0,
+      "high": 0,
+      "medium": 1,
+      "low": 0
+    }
+  },
+  "kubeBench": [
+    {
+      "id": "1.2.1",
+      "section": "API Server",
+      "host": "cks-control",
+      "file": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+      "contains": "--anonymous-auth=false",
+      "text": "Ensure that the --anonymous-auth argument is set to false (Manual)",
+      "remediation": "Edit the API server pod specification file /etc/kubernetes/manifests/kube-apiserver.yaml and set --anonymous-auth=false"
+    },
+    {
+      "id": "1.2.6",
+      "section": "API Server",
+      "host": "cks-control",
+      "file": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+      "notContains": "AlwaysAllow",
+      "text": "Ensure that the --authorization-mode argument is not set to AlwaysAllow (Automated)",
+      "remediation": "Set --authorization-mode to a value other than AlwaysAllow, e.g. Node,RBAC"
+    },
+    {
+      "id": "1.2.16",
+      "section": "API Server",
+      "host": "cks-control",
+      "file": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+      "contains": "--profiling=false",
+      "text": "Ensure that the --profiling argument is set to false (Automated)",
+      "remediation": "Edit /etc/kubernetes/manifests/kube-apiserver.yaml and add --profiling=false"
+    },
+    {
+      "id": "1.2.22",
+      "section": "API Server",
+      "host": "cks-control",
+      "file": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+      "contains": "--audit-log-path=",
+      "text": "Ensure that the --audit-log-path argument is set (Automated)",
+      "remediation": "Edit /etc/kubernetes/manifests/kube-apiserver.yaml and set --audit-log-path to a suitable path"
+    },
+    {
+      "id": "1.3.2",
+      "section": "Controller Manager",
+      "host": "cks-control",
+      "file": "/etc/kubernetes/manifests/kube-controller-manager.yaml",
+      "contains": "--profiling=false",
+      "text": "Ensure that the --profiling argument is set to false (Automated)",
+      "remediation": "Edit /etc/kubernetes/manifests/kube-controller-manager.yaml and add --profiling=false"
+    },
+    {
+      "id": "1.4.1",
+      "section": "Scheduler",
+      "host": "cks-control",
+      "file": "/etc/kubernetes/manifests/kube-scheduler.yaml",
+      "contains": "--profiling=false",
+      "text": "Ensure that the --profiling argument is set to false (Automated)",
+      "remediation": "Edit /etc/kubernetes/manifests/kube-scheduler.yaml and add --profiling=false"
+    }
+  ],
+  "clusters": {
+    "cks": {
+      "version": "1.31.0",
+      "ageDays": 40,
+      "nodes": [
+        {
+          "name": "cks-control",
+          "roles": [
+            "control-plane"
+          ],
+          "ip": "10.0.2.11"
+        },
+        {
+          "name": "cks-node1",
+          "ip": "10.0.2.12"
+        },
+        {
+          "name": "cks-node2",
+          "ip": "10.0.2.13"
+        }
+      ],
+      "resources": [
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "prod"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "web"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "restricted-ns"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "apps"
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "web",
+            "namespace": "prod",
+            "labels": {
+              "app": "web"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "web"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "web"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "db",
+            "namespace": "prod",
+            "labels": {
+              "app": "db"
+            }
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "db"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "db"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "redis:7.2",
+                    "ports": [
+                      {
+                        "containerPort": 6379
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "web",
+            "namespace": "prod"
+          },
+          "spec": {
+            "selector": {
+              "app": "web"
+            },
+            "ports": [
+              {
+                "port": 80,
+                "targetPort": 80
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "db",
+            "namespace": "prod"
+          },
+          "spec": {
+            "selector": {
+              "app": "db"
+            },
+            "ports": [
+              {
+                "port": 6379,
+                "targetPort": 6379
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "scanner",
+            "namespace": "prod",
+            "labels": {
+              "role": "scanner"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "main",
+                "image": "busybox:1.36",
+                "command": [
+                  "sleep",
+                  "3600"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "ServiceAccount",
+          "metadata": {
+            "name": "app-sa",
+            "namespace": "web"
+          }
+        },
+        {
+          "apiVersion": "rbac.authorization.k8s.io/v1",
+          "kind": "ClusterRoleBinding",
+          "metadata": {
+            "name": "app-sa-admin"
+          },
+          "roleRef": {
+            "apiGroup": "rbac.authorization.k8s.io",
+            "kind": "ClusterRole",
+            "name": "cluster-admin"
+          },
+          "subjects": [
+            {
+              "kind": "ServiceAccount",
+              "name": "app-sa",
+              "namespace": "web"
+            }
+          ]
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "ServiceAccount",
+          "metadata": {
+            "name": "worker-sa",
+            "namespace": "web"
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "worker",
+            "namespace": "web",
+            "labels": {
+              "app": "worker"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "worker"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "worker"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "busybox:1.36",
+                    "ports": [
+                      {
+                        "containerPort": 8080
+                      }
+                    ],
+                    "command": [
+                      "sleep",
+                      "3600"
+                    ]
+                  }
+                ],
+                "serviceAccountName": "worker-sa"
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Secret",
+          "metadata": {
+            "name": "db-creds",
+            "namespace": "web"
+          },
+          "type": "Opaque",
+          "data": {
+            "username": "YXBw",
+            "password": "cGFzc3cwcmQ="
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "ledger",
+            "namespace": "web",
+            "labels": {
+              "app": "ledger"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "ledger"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "ledger"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "secure-app",
+            "namespace": "restricted-ns",
+            "labels": {
+              "app": "secure-app"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "secure-app"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "secure-app"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ],
+                    "securityContext": {
+                      "privileged": true
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "alpha",
+            "namespace": "apps",
+            "labels": {
+              "app": "alpha"
+            }
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "alpha"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "alpha"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "nginx:1.27",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "beta",
+            "namespace": "apps",
+            "labels": {
+              "app": "beta"
+            }
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "beta"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "beta"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "docker.io/legacy/app:2.3",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "gamma",
+            "namespace": "apps",
+            "labels": {
+              "app": "gamma"
+            }
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "gamma"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "gamma"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "redis:7.2",
+                    "ports": [
+                      {
+                        "containerPort": 6379
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "delta",
+            "namespace": "apps",
+            "labels": {
+              "app": "delta"
+            }
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "delta"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "delta"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "docker.io/vendor/tool:1.0",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "chatter",
+            "namespace": "apps",
+            "labels": {
+              "app": "chatter"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "chatter"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "chatter"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "main",
+                    "image": "docker.io/acme/chat:4.1",
+                    "ports": [
+                      {
+                        "containerPort": 80
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ],
+      "hosts": {
+        "cks-control": {
+          "editManifests": {
+            "kube-apiserver": {
+              "replace": [
+                [
+                  "--authorization-mode=Node,RBAC",
+                  "--authorization-mode=AlwaysAllow"
+                ]
+              ]
+            }
+          }
+        },
+        "cks-node1": {
+          "files": {
+            "/var/lib/kubelet/config.yaml": "apiVersion: kubelet.config.k8s.io/v1beta1\nauthentication:\n  anonymous:\n    enabled: true\n  webhook:\n    cacheTTL: 0s\n    enabled: true\n  x509:\n    clientCAFile: /etc/kubernetes/pki/ca.crt\nauthorization:\n  mode: AlwaysAllow\ncgroupDriver: systemd\nclusterDNS:\n- 10.96.0.10\nclusterDomain: cluster.local\ncontainerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock\nkind: KubeletConfiguration\nrotateCertificates: true\nstaticPodPath: /etc/kubernetes/manifests\n",
+            "/etc/apparmor.d/k8s-deny-write": "#include <tunables/global>\n\nprofile k8s-deny-write flags=(attach_disconnected) {\n  #include <abstractions/base>\n\n  file,\n\n  # Deny all file writes.\n  deny /** w,\n}\n",
+            "/var/lib/kubelet/seccomp/profiles/audit.json": "{\n    \"defaultAction\": \"SCMP_ACT_LOG\"\n}\n"
+          }
+        },
+        "cks-node2": {
+          "files": {
+            "/var/lib/kubelet/seccomp/profiles/audit.json": "{\n    \"defaultAction\": \"SCMP_ACT_LOG\"\n}\n",
+            "/var/log/falco/falco.log": "Falco version: 0.38.2 (x86_64)\nLoading rules from file /etc/falco/falco_rules.yaml\nStarting internal webserver, listening on port 8765\n19:04:11.427103944: Warning Terminal shell in container (user=root user_loginuid=-1 k8s.ns=apps k8s.pod=chatter-6d9f8c7b5-x2k9q container=3f1a9e2b7c44 image=docker.io/acme/chat:4.1 shell=bash parent=runc cmdline=bash terminal=34816)\n19:04:19.880221001: Notice Packages installed in container (user=root k8s.ns=apps k8s.pod=chatter-6d9f8c7b5-x2k9q container=3f1a9e2b7c44 image=docker.io/acme/chat:4.1 command=apk add nmap)\n19:05:02.114009313: Warning Terminal shell in container (user=root user_loginuid=-1 k8s.ns=apps k8s.pod=chatter-6d9f8c7b5-x2k9q container=3f1a9e2b7c44 image=docker.io/acme/chat:4.1 shell=sh parent=bash cmdline=sh -c nmap -sS 10.244.0.0/16)\n"
+          },
+          "services": {
+            "falco": {
+              "active": true,
+              "journal": [
+                "Falco version: 0.38.2 (x86_64)",
+                "Loading rules from file /etc/falco/falco_rules.yaml",
+                "Starting internal webserver, listening on port 8765",
+                "19:04:11.427103944: Warning Terminal shell in container (user=root user_loginuid=-1 k8s.ns=apps k8s.pod=chatter-6d9f8c7b5-x2k9q container=3f1a9e2b7c44 image=docker.io/acme/chat:4.1 shell=bash parent=runc cmdline=bash terminal=34816)",
+                "19:04:19.880221001: Notice Packages installed in container (user=root k8s.ns=apps k8s.pod=chatter-6d9f8c7b5-x2k9q container=3f1a9e2b7c44 image=docker.io/acme/chat:4.1 command=apk add nmap)",
+                "19:05:02.114009313: Warning Terminal shell in container (user=root user_loginuid=-1 k8s.ns=apps k8s.pod=chatter-6d9f8c7b5-x2k9q container=3f1a9e2b7c44 image=docker.io/acme/chat:4.1 shell=sh parent=bash cmdline=sh -c nmap -sS 10.244.0.0/16)"
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+  "questions": [
+    {
+      "title": "Default deny with an allow rule",
+      "domain": "Cluster Setup",
+      "weight": 6,
+      "context": "cks",
+      "text": "In namespace `prod` create a NetworkPolicy named `default-deny` that denies **all ingress and egress** traffic for every pod in the namespace.\n\nThen add NetworkPolicies so that pods labelled `app=web` can still reach pods labelled `app=db` on TCP port `6379` — and nothing else can. The pod `scanner` must not be able to reach `db`.",
+      "solution": "    apiVersion: networking.k8s.io/v1\n    kind: NetworkPolicy\n    metadata:\n      name: default-deny\n      namespace: prod\n    spec:\n      podSelector: {}\n      policyTypes:\n      - Ingress\n      - Egress\n    ---\n    apiVersion: networking.k8s.io/v1\n    kind: NetworkPolicy\n    metadata:\n      name: allow-web-to-db\n      namespace: prod\n    spec:\n      podSelector:\n        matchLabels:\n          app: db\n      policyTypes:\n      - Ingress\n      ingress:\n      - from:\n        - podSelector:\n            matchLabels:\n              app: web\n        ports:\n        - protocol: TCP\n          port: 6379\n    ---\n    apiVersion: networking.k8s.io/v1\n    kind: NetworkPolicy\n    metadata:\n      name: allow-web-egress\n      namespace: prod\n    spec:\n      podSelector:\n        matchLabels:\n          app: web\n      policyTypes:\n      - Egress\n      egress:\n      - to:\n        - podSelector:\n            matchLabels:\n              app: db\n        ports:\n        - protocol: TCP\n          port: 6379\n\nPolicies are additive: once `default-deny` selects a pod, only traffic some policy explicitly allows gets through. Because the deny covers egress too, `web` needs its own egress allowance to `db` (and, in a real cluster, a DNS allowance to kube-system).",
+      "references": [
+        {
+          "title": "Network Policies — default policies",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/#default-policies"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "netpol",
+          "namespace": "prod",
+          "name": "default-deny",
+          "hint": "default-deny must select all pods ({}) with policyTypes Ingress and Egress",
+          "assert": {
+            "spec.podSelector": {},
+            "spec.policyTypes": {
+              "includesAll": [
+                "Ingress",
+                "Egress"
+              ]
+            }
+          }
+        },
+        {
+          "type": "connectivity",
+          "to": {
+            "namespace": "prod",
+            "selector": "app=db"
+          },
+          "port": 6379,
+          "expect": true,
+          "hint": "web must still reach db on 6379 (allow both db ingress and web egress)",
+          "from": {
+            "namespace": "prod",
+            "selector": "app=web"
+          }
+        },
+        {
+          "type": "connectivity",
+          "to": {
+            "namespace": "prod",
+            "selector": "app=db"
+          },
+          "port": 6379,
+          "expect": false,
+          "hint": "scanner must not reach db",
+          "from": {
+            "namespace": "prod",
+            "name": "scanner"
+          }
+        }
+      ]
+    },
+    {
+      "title": "Ingress with TLS",
+      "domain": "Cluster Setup",
+      "weight": 5,
+      "context": "cks",
+      "text": "A certificate and key for `web.prod.local` are on the base host at `/opt/tls/tls.crt` and `/opt/tls/tls.key`.\n\nIn namespace `prod` create a TLS Secret named `web-tls` from them, then an Ingress named `web-ingress` that serves host `web.prod.local` over TLS with that secret, routing `/` (Prefix) to Service `web` port `80`.",
+      "solution": "    kubectl -n prod create secret tls web-tls --cert=/opt/tls/tls.crt --key=/opt/tls/tls.key\n    kubectl -n prod create ingress web-ingress --rule=\"web.prod.local/*=web:80,tls=web-tls\"\n    kubectl -n prod get ingress web-ingress -o yaml\n\nThe `,tls=web-tls` suffix in the rule adds `spec.tls[].secretName`. A TLS Secret has type `kubernetes.io/tls` with the keys `tls.crt` and `tls.key`.",
+      "references": [
+        {
+          "title": "Ingress — TLS",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/#tls"
+        },
+        {
+          "title": "TLS Secrets",
+          "url": "https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "secret",
+          "namespace": "prod",
+          "name": "web-tls",
+          "hint": "secret web-tls must be of type kubernetes.io/tls",
+          "assert": {
+            "type": "kubernetes.io/tls",
+            "data.tls\\.crt": {
+              "exists": true
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "ingress",
+          "namespace": "prod",
+          "name": "web-ingress",
+          "hint": "web-ingress must use tls secret web-tls for web.prod.local and route to service web:80",
+          "assert": {
+            "spec.tls": {
+              "anyMatch": {
+                "secretName": "web-tls"
+              }
+            },
+            "spec.rules[0].host": "web.prod.local",
+            "spec.rules[0].http.paths[0].backend.service.name": "web",
+            "spec.rules[0].http.paths[0].backend.service.port.number": 80
+          }
+        }
+      ]
+    },
+    {
+      "title": "CIS benchmark remediation",
+      "domain": "Cluster Setup",
+      "weight": 6,
+      "context": "cks",
+      "text": "Run `kube-bench` on the control plane node `cks-control` and fix every check about the `--profiling` argument: the API server, controller manager and scheduler must all run with `--profiling=false`.\n\nRe-run `kube-bench` to confirm those checks pass and that the control plane is still healthy.",
+      "solution": "    ssh cks-control\n    sudo -i\n    kube-bench                                # [FAIL] 1.2.16, 1.3.2, 1.4.1 (profiling)\n    vim /etc/kubernetes/manifests/kube-apiserver.yaml            # add: - --profiling=false\n    vim /etc/kubernetes/manifests/kube-controller-manager.yaml   # add: - --profiling=false\n    vim /etc/kubernetes/manifests/kube-scheduler.yaml            # add: - --profiling=false\n    kube-bench --check 1.2.16,1.3.2,1.4.1     # PASS\n    exit; exit\n    kubectl -n kube-system get pods           # control plane pods Running\n\nEach flag goes into the `command:` list of the static pod manifest; the kubelet restarts the component when the file changes. Make one change at a time and confirm `kubectl get nodes` still works after each.",
+      "references": [
+        {
+          "title": "CIS Kubernetes Benchmark (kube-bench)",
+          "url": "https://github.com/aquasecurity/kube-bench"
+        },
+        {
+          "title": "Static Pods",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/static-pod/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--profiling=false",
+          "hint": "kube-apiserver manifest lacks --profiling=false"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-controller-manager.yaml",
+          "contains": "--profiling=false",
+          "hint": "kube-controller-manager manifest lacks --profiling=false"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-scheduler.yaml",
+          "contains": "--profiling=false",
+          "hint": "kube-scheduler manifest lacks --profiling=false"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-apiserver",
+          "hint": "kube-apiserver manifest is broken"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-controller-manager",
+          "hint": "kube-controller-manager manifest is broken"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-scheduler",
+          "hint": "kube-scheduler manifest is broken"
+        }
+      ],
+      "ssh": "ssh cks-control"
+    },
+    {
+      "title": "Least-privilege RBAC",
+      "domain": "Cluster Hardening",
+      "weight": 7,
+      "context": "cks",
+      "text": "The ServiceAccount `app-sa` in namespace `web` is bound to `cluster-admin` through the ClusterRoleBinding `app-sa-admin`.\n\nRemove that binding. Instead, create a Role `pod-reader` in `web` that permits only `get` and `list` on `pods`, and a RoleBinding `app-sa-pods` binding it to `app-sa`. The ServiceAccount must not be able to delete deployments or list secrets.",
+      "solution": "    kubectl get clusterrolebinding app-sa-admin -o yaml     # confirm what it grants\n    kubectl delete clusterrolebinding app-sa-admin\n    kubectl -n web create role pod-reader --verb=get,list --resource=pods\n    kubectl -n web create rolebinding app-sa-pods --role=pod-reader --serviceaccount=web:app-sa\n    kubectl -n web auth can-i list pods --as=system:serviceaccount:web:app-sa        # yes\n    kubectl -n web auth can-i delete deployments --as=system:serviceaccount:web:app-sa # no\n\nAudit existing bindings with `kubectl get clusterrolebindings -o wide` and `kubectl get rolebindings -A -o wide`; anything binding `cluster-admin` to a workload identity is a finding.",
+      "references": [
+        {
+          "title": "Using RBAC Authorization",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "clusterrolebinding",
+          "name": "app-sa-admin",
+          "exists": false,
+          "hint": "clusterrolebinding app-sa-admin still exists"
+        },
+        {
+          "type": "canI",
+          "verb": "list",
+          "resource": "pods",
+          "namespace": "web",
+          "expect": true,
+          "hint": "app-sa must be able to list pods in web",
+          "as": "system:serviceaccount:web:app-sa"
+        },
+        {
+          "type": "canI",
+          "verb": "get",
+          "resource": "pods",
+          "namespace": "web",
+          "expect": true,
+          "hint": "app-sa must be able to get pods in web",
+          "as": "system:serviceaccount:web:app-sa"
+        },
+        {
+          "type": "canI",
+          "verb": "delete",
+          "resource": "deployments",
+          "namespace": "web",
+          "expect": false,
+          "hint": "app-sa must not be able to delete deployments",
+          "as": "system:serviceaccount:web:app-sa"
+        },
+        {
+          "type": "canI",
+          "verb": "list",
+          "resource": "secrets",
+          "namespace": "web",
+          "expect": false,
+          "hint": "app-sa must not be able to list secrets",
+          "as": "system:serviceaccount:web:app-sa"
+        }
+      ]
+    },
+    {
+      "title": "Do not mount service account tokens",
+      "domain": "Cluster Hardening",
+      "weight": 5,
+      "context": "cks",
+      "text": "The Deployment `worker` in namespace `web` runs as ServiceAccount `worker-sa` but never talks to the API.\n\nDisable automatic mounting of the service account token both on the ServiceAccount `worker-sa` and in the Deployment's pod template. The Deployment must remain available.",
+      "solution": "    kubectl -n web patch serviceaccount worker-sa -p '{\"automountServiceAccountToken\": false}'\n    kubectl -n web patch deployment worker -p '{\"spec\":{\"template\":{\"spec\":{\"automountServiceAccountToken\": false}}}}'\n    kubectl -n web rollout status deployment worker\n    kubectl -n web get pod -l app=worker -o yaml | grep -A3 volumeMounts   # no kube-api-access mount\n\n`kubectl edit` works too. Setting it on the pod spec wins over the ServiceAccount setting, so set both for defense in depth.",
+      "references": [
+        {
+          "title": "Configure Service Accounts for Pods — opt out of token automounting",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#opt-out-of-api-credential-automounting"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "sa",
+          "namespace": "web",
+          "name": "worker-sa",
+          "hint": "serviceaccount worker-sa must set automountServiceAccountToken: false",
+          "assert": {
+            "automountServiceAccountToken": false
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "web",
+          "name": "worker",
+          "hint": "deployment worker pod template must set automountServiceAccountToken: false",
+          "assert": {
+            "spec.template.spec.automountServiceAccountToken": false
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "namespace": "web",
+          "name": "worker",
+          "hint": "deployment worker is not available"
+        }
+      ]
+    },
+    {
+      "title": "Harden the API server",
+      "domain": "Cluster Hardening",
+      "weight": 6,
+      "context": "cks",
+      "text": "On the control plane node `cks-control`, the API server currently runs with `--authorization-mode=AlwaysAllow` and permits anonymous requests.\n\nChange the static pod manifest so that authorization mode is `Node,RBAC` and anonymous authentication is disabled. The API server must come back healthy.",
+      "solution": "    ssh cks-control\n    sudo -i\n    vim /etc/kubernetes/manifests/kube-apiserver.yaml\n      # - --authorization-mode=AlwaysAllow   ->   - --authorization-mode=Node,RBAC\n      # add:  - --anonymous-auth=false\n    exit; exit\n    kubectl get nodes      # works again once the kubelet restarts the static pod\n\nA typo in a flag leaves the API server crash-looping; if `kubectl` stops answering, go back to the node and check `crictl ps -a` / `journalctl -u kubelet`.",
+      "references": [
+        {
+          "title": "kube-apiserver reference",
+          "url": "https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/"
+        },
+        {
+          "title": "Authorization modes",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/authorization/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--authorization-mode=Node,RBAC",
+          "hint": "kube-apiserver must run with --authorization-mode=Node,RBAC"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--anonymous-auth=false",
+          "hint": "kube-apiserver must run with --anonymous-auth=false"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-apiserver",
+          "hint": "the kube-apiserver manifest is broken"
+        }
+      ],
+      "ssh": "ssh cks-control"
+    },
+    {
+      "title": "Harden the kubelet",
+      "domain": "System Hardening",
+      "weight": 6,
+      "context": "cks",
+      "text": "The kubelet on node `cks-node1` accepts anonymous requests and uses `AlwaysAllow` authorization.\n\nFix its configuration (`/var/lib/kubelet/config.yaml`) so that anonymous authentication is disabled and authorization mode is `Webhook`, then restart the kubelet. The node must stay `Ready`.",
+      "solution": "    ssh cks-node1\n    sudo -i\n    vim /var/lib/kubelet/config.yaml\n      # authentication.anonymous.enabled: false\n      # authorization.mode: Webhook\n    systemctl restart kubelet\n    systemctl status kubelet\n    exit; exit\n    kubectl get nodes\n\nThese two settings are the kubelet equivalents of the API server's `--anonymous-auth` and `--authorization-mode`; with `AlwaysAllow`, anyone who can reach port 10250 can run commands in every container on the node.",
+      "references": [
+        {
+          "title": "Kubelet configuration (v1beta1)",
+          "url": "https://kubernetes.io/docs/reference/config-api/kubelet-config.v1beta1/"
+        },
+        {
+          "title": "Kubelet authentication/authorization",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/kubelet-authn-authz/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks-node1",
+          "path": "/var/lib/kubelet/config.yaml",
+          "matches": "anonymous:\\s*\\n\\s*enabled:\\s*false",
+          "hint": "kubelet config must set authentication.anonymous.enabled: false"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-node1",
+          "path": "/var/lib/kubelet/config.yaml",
+          "matches": "mode:\\s*Webhook",
+          "hint": "kubelet config must set authorization.mode: Webhook"
+        },
+        {
+          "type": "hostService",
+          "host": "cks-node1",
+          "name": "kubelet",
+          "active": true,
+          "hint": "kubelet on cks-node1 is not running"
+        },
+        {
+          "type": "nodeReady",
+          "node": "cks-node1",
+          "hint": "cks-node1 is not Ready"
+        }
+      ],
+      "ssh": "ssh cks-node1"
+    },
+    {
+      "title": "AppArmor",
+      "domain": "System Hardening",
+      "weight": 7,
+      "context": "cks",
+      "text": "An AppArmor profile file `/etc/apparmor.d/k8s-deny-write` exists on node `cks-node1` but is not loaded.\n\nLoad it into the kernel on that node. Then create a Pod named `locked` in namespace `default` (image `busybox:1.36`, command `sleep 3600`) that runs **on `cks-node1`** with that profile applied to its container using the `securityContext.appArmorProfile` field.",
+      "solution": "    ssh cks-node1\n    sudo apparmor_parser -q /etc/apparmor.d/k8s-deny-write\n    sudo aa-status | grep k8s-deny-write\n    exit\n\n    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: locked\n    spec:\n      nodeName: cks-node1\n      containers:\n      - name: main\n        image: busybox:1.36\n        command: [\"sleep\", \"3600\"]\n        securityContext:\n          appArmorProfile:\n            type: Localhost\n            localhostProfile: k8s-deny-write\n\nProfiles live on the node, not in the cluster, so the pod must be pinned to a node where the profile is loaded. Since v1.30 the field replaces the old `container.apparmor.security.beta.kubernetes.io/<name>` annotation.",
+      "references": [
+        {
+          "title": "Restrict a Container's Access to Resources with AppArmor",
+          "url": "https://kubernetes.io/docs/tutorials/security/apparmor/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostApparmorLoaded",
+          "host": "cks-node1",
+          "profile": "k8s-deny-write",
+          "hint": "profile k8s-deny-write is not loaded on cks-node1 (apparmor_parser)"
+        },
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "locked",
+          "hint": "pod locked must set securityContext.appArmorProfile Localhost/k8s-deny-write on its container",
+          "assert": {
+            "spec.containers[0].securityContext.appArmorProfile.type": "Localhost",
+            "spec.containers[0].securityContext.appArmorProfile.localhostProfile": "k8s-deny-write"
+          }
+        },
+        {
+          "type": "podOnNode",
+          "namespace": "default",
+          "name": "locked",
+          "node": "cks-node1",
+          "hint": "pod locked must run on cks-node1"
+        }
+      ],
+      "ssh": "ssh cks-node1"
+    },
+    {
+      "title": "seccomp profile",
+      "domain": "System Hardening",
+      "weight": 5,
+      "context": "cks",
+      "text": "A seccomp profile is installed on every worker node at `/var/lib/kubelet/seccomp/profiles/audit.json`.\n\nCreate a Pod named `audited` in namespace `default` (image `busybox:1.36`, command `sleep 3600`) whose **pod-level** securityContext uses that Localhost seccomp profile.",
+      "solution": "    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: audited\n    spec:\n      securityContext:\n        seccompProfile:\n          type: Localhost\n          localhostProfile: profiles/audit.json\n      containers:\n      - name: main\n        image: busybox:1.36\n        command: [\"sleep\", \"3600\"]\n\n`localhostProfile` is relative to the kubelet's seccomp root (`/var/lib/kubelet/seccomp`). `type: RuntimeDefault` is the usual choice when no custom profile is required.",
+      "references": [
+        {
+          "title": "Restrict a Container's Syscalls with seccomp",
+          "url": "https://kubernetes.io/docs/tutorials/security/seccomp/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "audited",
+          "hint": "pod audited must use pod-level seccompProfile Localhost profiles/audit.json",
+          "assert": {
+            "spec.securityContext.seccompProfile.type": "Localhost",
+            "spec.securityContext.seccompProfile.localhostProfile": "profiles/audit.json"
+          }
+        },
+        {
+          "type": "podsReady",
+          "namespace": "default",
+          "name": "audited",
+          "hint": "pod audited is not running"
+        }
+      ]
+    },
+    {
+      "title": "Pod Security Admission",
+      "domain": "Minimize Microservice Vulnerabilities",
+      "weight": 8,
+      "context": "cks",
+      "text": "Enforce the `restricted` Pod Security Standard on namespace `restricted-ns` using Pod Security Admission labels.\n\nThe Deployment `secure-app` in that namespace violates the standard. Fix its pod template so that new pods are admitted and the Deployment becomes fully available (do not delete the Deployment).",
+      "solution": "    kubectl label namespace restricted-ns pod-security.kubernetes.io/enforce=restricted\n    kubectl -n restricted-ns rollout restart deployment secure-app   # new pods are rejected: see events\n    kubectl -n restricted-ns get events | grep FailedCreate\n    kubectl -n restricted-ns edit deployment secure-app\n\nA compliant container security context:\n\n    securityContext:\n      allowPrivilegeEscalation: false\n      runAsNonRoot: true\n      capabilities:\n        drop: [\"ALL\"]\n      seccompProfile:\n        type: RuntimeDefault\n\nand remove `privileged: true`. The restricted profile forbids privileged containers, privilege escalation, running as root, added capabilities, host namespaces and hostPath volumes. Existing pods keep running; only new pods are admitted or rejected, so the fix shows up in the new ReplicaSet.",
+      "references": [
+        {
+          "title": "Pod Security Admission",
+          "url": "https://kubernetes.io/docs/concepts/security/pod-security-admission/"
+        },
+        {
+          "title": "Pod Security Standards — restricted",
+          "url": "https://kubernetes.io/docs/concepts/security/pod-security-standards/#restricted"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "namespace",
+          "name": "restricted-ns",
+          "hint": "namespace restricted-ns must carry pod-security.kubernetes.io/enforce=restricted",
+          "assert": {
+            "metadata.labels.pod-security\\.kubernetes\\.io/enforce": "restricted"
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "restricted-ns",
+          "name": "secure-app",
+          "hint": "secure-app container must drop ALL capabilities, disallow privilege escalation and not be privileged",
+          "assert": {
+            "spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation": false,
+            "spec.template.spec.containers[0].securityContext.capabilities.drop": {
+              "contains": "ALL"
+            },
+            "spec.template.spec.containers[0].securityContext.privileged": {
+              "matches": "^(undefined|false)$"
+            }
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "namespace": "restricted-ns",
+          "name": "secure-app",
+          "hint": "secure-app pods are not all available (are new pods being admitted?)"
+        }
+      ]
+    },
+    {
+      "title": "Secrets as read-only files",
+      "domain": "Minimize Microservice Vulnerabilities",
+      "weight": 4,
+      "context": "cks",
+      "text": "The Secret `db-creds` exists in namespace `web`. Create a Pod named `vault-client` in `web` (image `busybox:1.36`, command `sleep 3600`) that mounts the Secret as a **read-only volume** at `/etc/creds` — not as environment variables.",
+      "solution": "    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: vault-client\n      namespace: web\n    spec:\n      volumes:\n      - name: creds\n        secret:\n          secretName: db-creds\n      containers:\n      - name: main\n        image: busybox:1.36\n        command: [\"sleep\", \"3600\"]\n        volumeMounts:\n        - name: creds\n          mountPath: /etc/creds\n          readOnly: true\n\nVerify with `kubectl -n web exec vault-client -- ls /etc/creds`. Files are updated when the Secret changes; environment variables are not, and they leak into `kubectl describe` and process listings.",
+      "references": [
+        {
+          "title": "Distribute Credentials Securely Using Secrets",
+          "url": "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "web",
+          "name": "vault-client",
+          "hint": "vault-client must mount secret db-creds read-only at /etc/creds",
+          "assert": {
+            "spec.volumes": {
+              "anyMatch": {
+                "secret.secretName": "db-creds"
+              }
+            },
+            "spec.containers[0].volumeMounts": {
+              "anyMatch": {
+                "mountPath": "/etc/creds",
+                "readOnly": true
+              }
+            }
+          }
+        },
+        {
+          "type": "podsReady",
+          "namespace": "web",
+          "name": "vault-client",
+          "hint": "pod vault-client is not running"
+        }
+      ]
+    },
+    {
+      "title": "Sandboxed runtime",
+      "domain": "Minimize Microservice Vulnerabilities",
+      "weight": 5,
+      "context": "cks",
+      "text": "The nodes have gVisor installed with the runtime handler `runsc`.\n\nCreate a RuntimeClass named `gvisor` for that handler, and a Pod named `sandboxed` in namespace `default` (image `nginx:1.27`) that runs with it.",
+      "solution": "    apiVersion: node.k8s.io/v1\n    kind: RuntimeClass\n    metadata:\n      name: gvisor\n    handler: runsc\n    ---\n    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: sandboxed\n    spec:\n      runtimeClassName: gvisor\n      containers:\n      - name: nginx\n        image: nginx:1.27\n\nA RuntimeClass maps a name to a CRI handler configured on the nodes; `runtimeClassName` on the pod selects it.",
+      "references": [
+        {
+          "title": "Runtime Class",
+          "url": "https://kubernetes.io/docs/concepts/containers/runtime-class/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "runtimeclass",
+          "name": "gvisor",
+          "hint": "runtimeclass gvisor with handler runsc missing",
+          "assert": {
+            "handler": "runsc"
+          }
+        },
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "sandboxed",
+          "hint": "pod sandboxed must set runtimeClassName: gvisor",
+          "assert": {
+            "spec.runtimeClassName": "gvisor"
+          }
+        },
+        {
+          "type": "podsReady",
+          "namespace": "default",
+          "name": "sandboxed",
+          "hint": "pod sandboxed is not running"
+        }
+      ]
+    },
+    {
+      "title": "Scan images and remove the vulnerable ones",
+      "domain": "Supply Chain Security",
+      "weight": 7,
+      "context": "cks",
+      "text": "Namespace `apps` has several Deployments. Using `trivy`, scan the image of each Deployment and **delete every Deployment whose image has one or more CRITICAL vulnerabilities**. Leave the others untouched.",
+      "solution": "    kubectl -n apps get deployments -o wide          # images\n    trivy image --severity CRITICAL nginx:1.27\n    trivy image --severity CRITICAL docker.io/legacy/app:2.3    # CRITICAL: 3\n    trivy image --severity CRITICAL redis:7.2\n    trivy image --severity CRITICAL docker.io/vendor/tool:1.0    # CRITICAL: 1\n    trivy image --severity CRITICAL docker.io/acme/chat:4.1\n    kubectl -n apps delete deployment beta delta\n\n`--severity` narrows the report; the `Total:` line is the quick read. A loop saves time: `for i in $(kubectl -n apps get deploy -o jsonpath='{.items[*].spec.template.spec.containers[0].image}'); do echo $i; trivy image -s CRITICAL $i | grep Total; done` (loops are not simulated here — scan them one by one).",
+      "references": [
+        {
+          "title": "Trivy",
+          "url": "https://aquasecurity.github.io/trivy/"
+        },
+        {
+          "title": "Supply chain security overview",
+          "url": "https://kubernetes.io/docs/concepts/security/overview/#supply-chain"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "apps",
+          "name": "beta",
+          "exists": false,
+          "hint": "beta (docker.io/legacy/app:2.3, 3 CRITICAL) must be deleted"
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "apps",
+          "name": "delta",
+          "exists": false,
+          "hint": "delta (docker.io/vendor/tool:1.0, 1 CRITICAL) must be deleted"
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "apps",
+          "name": "alpha",
+          "hint": "alpha has no CRITICAL findings and must stay"
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "apps",
+          "name": "gamma",
+          "hint": "gamma has no CRITICAL findings and must stay"
+        },
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "apps",
+          "name": "chatter",
+          "hint": "chatter has no CRITICAL findings and must stay"
+        }
+      ]
+    },
+    {
+      "title": "Static analysis with kubesec",
+      "domain": "Supply Chain Security",
+      "weight": 6,
+      "context": "cks",
+      "text": "The manifest `~/hardened-pod.yaml` on the base host defines Pod `hardened`. `kubesec scan` reports a critical finding.\n\nFix the manifest so that kubesec reports no critical issues and the container runs as non-root with a read-only root filesystem and all capabilities dropped, then create the Pod in namespace `default`.",
+      "solution": "    kubesec scan ~/hardened-pod.yaml           # critical: Privileged\n    vim ~/hardened-pod.yaml\n\n    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: hardened\n    spec:\n      containers:\n      - name: app\n        image: nginx:1.27\n        securityContext:\n          runAsNonRoot: true\n          readOnlyRootFilesystem: true\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop: [\"ALL\"]\n\n    kubesec scan ~/hardened-pod.yaml           # Passed\n    kubectl apply -f ~/hardened-pod.yaml\n\nkubesec scores a manifest: `privileged`, `hostNetwork` and `hostPID` are negative critical points; non-root, read-only filesystem, dropped capabilities, resource limits and a dedicated ServiceAccount add points.",
+      "references": [
+        {
+          "title": "kubesec",
+          "url": "https://kubesec.io/"
+        },
+        {
+          "title": "Configure a Security Context",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "pod",
+          "namespace": "default",
+          "name": "hardened",
+          "hint": "pod hardened must not be privileged and must set runAsNonRoot, readOnlyRootFilesystem and drop ALL capabilities",
+          "assert": {
+            "spec.containers[0].securityContext.privileged": {
+              "matches": "^(undefined|false)$"
+            },
+            "spec.containers[0].securityContext.runAsNonRoot": true,
+            "spec.containers[0].securityContext.readOnlyRootFilesystem": true,
+            "spec.containers[0].securityContext.capabilities.drop": {
+              "contains": "ALL"
+            }
+          }
+        },
+        {
+          "type": "podsReady",
+          "namespace": "default",
+          "name": "hardened",
+          "hint": "pod hardened is not running"
+        }
+      ]
+    },
+    {
+      "title": "Enable audit logging",
+      "domain": "Monitoring, Logging and Runtime Security",
+      "weight": 7,
+      "context": "cks",
+      "text": "Enable API server audit logging on `cks-control`:\n\n- write an audit policy to `/etc/kubernetes/audit-policy.yaml` that logs **Secrets** at the `Metadata` level and everything else at `RequestResponse`\n- configure the API server with `--audit-policy-file=/etc/kubernetes/audit-policy.yaml`, `--audit-log-path=/var/log/kubernetes/audit/audit.log`, `--audit-log-maxage=30` and `--audit-log-maxbackup=10`\n\nThe API server must stay healthy.",
+      "solution": "    ssh cks-control\n    sudo -i\n    vim /etc/kubernetes/audit-policy.yaml\n\n    apiVersion: audit.k8s.io/v1\n    kind: Policy\n    rules:\n    - level: Metadata\n      resources:\n      - group: \"\"\n        resources: [\"secrets\"]\n    - level: RequestResponse\n\n    mkdir -p /var/log/kubernetes/audit\n    vim /etc/kubernetes/manifests/kube-apiserver.yaml\n      # add to command:\n      #   - --audit-policy-file=/etc/kubernetes/audit-policy.yaml\n      #   - --audit-log-path=/var/log/kubernetes/audit/audit.log\n      #   - --audit-log-maxage=30\n      #   - --audit-log-maxbackup=10\n      # and mount both paths (hostPath volumes + volumeMounts) so the static pod can read the policy and write the log\n\nRules are evaluated in order; the first match wins, so the Secrets rule must come before the catch-all. The policy file is read by the API server *container*, which is why it must be mounted into the pod.",
+      "references": [
+        {
+          "title": "Auditing",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-cluster/audit/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/audit-policy.yaml",
+          "contains": "secrets",
+          "hint": "/etc/kubernetes/audit-policy.yaml must exist and have a rule for secrets"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/audit-policy.yaml",
+          "matches": "level:\\s*Metadata",
+          "hint": "the secrets rule must use level Metadata"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--audit-policy-file=/etc/kubernetes/audit-policy.yaml",
+          "hint": "kube-apiserver needs --audit-policy-file=/etc/kubernetes/audit-policy.yaml"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--audit-log-path=/var/log/kubernetes/audit/audit.log",
+          "hint": "kube-apiserver needs --audit-log-path=/var/log/kubernetes/audit/audit.log"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--audit-log-maxage=30",
+          "hint": "kube-apiserver needs --audit-log-maxage=30"
+        },
+        {
+          "type": "hostFile",
+          "host": "cks-control",
+          "path": "/etc/kubernetes/manifests/kube-apiserver.yaml",
+          "contains": "--audit-log-maxbackup=10",
+          "hint": "kube-apiserver needs --audit-log-maxbackup=10"
+        },
+        {
+          "type": "staticPodHealthy",
+          "component": "kube-apiserver",
+          "hint": "the kube-apiserver manifest is broken"
+        }
+      ],
+      "ssh": "ssh cks-control"
+    },
+    {
+      "title": "Runtime detection with Falco",
+      "domain": "Monitoring, Logging and Runtime Security",
+      "weight": 5,
+      "context": "cks",
+      "text": "Falco runs on node `cks-node2` and has been reporting `Terminal shell in container` events for a workload in namespace `apps`.\n\nUsing the Falco output on that node (`journalctl -u falco` or `/var/log/falco/falco.log`), identify which Deployment the offending container belongs to and scale that Deployment to `0` replicas.",
+      "solution": "    ssh cks-node2\n    sudo journalctl -u falco --no-pager | grep 'Terminal shell'\n    # ... k8s.ns=apps k8s.pod=chatter-... image=docker.io/acme/chat:4.1 ...\n    exit\n    kubectl -n apps get deployments -o wide      # which deployment runs docker.io/acme/chat:4.1\n    kubectl -n apps scale deployment chatter --replicas=0\n\nFalco events name the namespace, pod and image; the pod name prefix (before the ReplicaSet hash) and the image both point at the Deployment.",
+      "references": [
+        {
+          "title": "Falco",
+          "url": "https://falco.org/docs/"
+        },
+        {
+          "title": "Runtime security overview",
+          "url": "https://kubernetes.io/docs/concepts/security/overview/#runtime"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "apps",
+          "name": "chatter",
+          "hint": "deployment chatter (image docker.io/acme/chat:4.1) must be scaled to 0",
+          "assert": {
+            "spec.replicas": 0
+          }
+        }
+      ],
+      "ssh": "ssh cks-node2"
+    },
+    {
+      "title": "Immutable containers",
+      "domain": "Monitoring, Logging and Runtime Security",
+      "weight": 5,
+      "context": "cks",
+      "text": "Make the containers of Deployment `ledger` in namespace `web` immutable: set `readOnlyRootFilesystem: true` on the container and provide an `emptyDir` volume mounted at `/tmp` so the application can still write temporary files. The Deployment must remain fully available.",
+      "solution": "    kubectl -n web edit deployment ledger\n\n    spec:\n      template:\n        spec:\n          volumes:\n          - name: tmp\n            emptyDir: {}\n          containers:\n          - name: main\n            image: nginx:1.27\n            securityContext:\n              readOnlyRootFilesystem: true\n            volumeMounts:\n            - name: tmp\n              mountPath: /tmp\n\n    kubectl -n web rollout status deployment ledger\n\nA read-only root filesystem blocks attackers from dropping binaries into the container; writable scratch space moves to explicit volumes (`/tmp`, cache directories). Real nginx also needs writable `/var/cache/nginx` and `/var/run` — in a real cluster mount emptyDirs there too.",
+      "references": [
+        {
+          "title": "Security Context — read-only root filesystem",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "kind": "deployment",
+          "namespace": "web",
+          "name": "ledger",
+          "hint": "ledger must set readOnlyRootFilesystem: true and mount an emptyDir at /tmp",
+          "assert": {
+            "spec.template.spec.containers[0].securityContext.readOnlyRootFilesystem": true,
+            "spec.template.spec.volumes": {
+              "anyMatch": {
+                "emptyDir": {
+                  "exists": true
+                }
+              }
+            },
+            "spec.template.spec.containers[0].volumeMounts": {
+              "anyMatch": {
+                "mountPath": "/tmp"
+              }
+            }
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "namespace": "web",
+          "name": "ledger",
+          "hint": "deployment ledger is not fully available"
+        }
+      ]
+    }
+  ]
+}

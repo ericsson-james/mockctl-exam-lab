@@ -1,0 +1,16 @@
+// Cloudflare Workers config: serves dist/ as static assets (no Worker script).
+// Deploy with `npm run deploy` after a one-time `npx wrangler login`.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mockctl-exam-lab",
+  "compatibility_date": "2026-09-15",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  // Custom domains: Cloudflare creates the DNS records and certificates on deploy.
+  "routes": [
+    { "pattern": "mockctl.com", "custom_domain": true },
+    { "pattern": "www.mockctl.com", "custom_domain": true }
+  ]
+}
