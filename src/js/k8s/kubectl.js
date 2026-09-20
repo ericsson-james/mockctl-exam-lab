@@ -1271,7 +1271,12 @@ class Kubectl {
     const entry = groups[0].entry;
     const obj = this.listObjs(t, entry, { names: groups[0].names })[0];
     const original = '# Please edit the object below. Lines beginning with a \'#\' will be ignored,\n# and an empty file will abort the edit. If an error occurs while saving this file will be\n# reopened with the relevant failures.\n#\n' + YAML.stringify(obj);
-    const res = await ctx.app.editor.open({ text: original, name: '/tmp/kubectl-edit-' + randSuffix(8) + '.yaml', validate: (text) => {
+    const resName = entry.plural + (entry.group ? '.' + entry.group : '') + ' "' + obj.metadata.name + '"';
+    const res = await ctx.app.editor.open({ text: original, name: '/tmp/kubectl-edit-' + randSuffix(8) + '.yaml', onInvalid: (err) => {
+      const msg = String(err).replace(/^error: /, '');
+      if (/^error parsing YAML/.test(msg)) return ['# The edited file had a syntax error: ' + msg.replace(/^error parsing YAML: /, ''), '#'];
+      return ['# ' + resName + ' was not valid:', '# * ' + msg, '#'];
+    }, validate: (text) => {
       let doc;
       try { doc = YAML.parse(text); } catch (e) { return 'error: error parsing YAML: ' + e.message; }
       if (!doc) return null;
@@ -1279,10 +1284,11 @@ class Kubectl {
       try { t.cluster.validate(deepClone(doc), entry); } catch (e) { return String(e.message); }
       return null;
     } });
-    if (!res.saved) return io.out('Edit cancelled, no changes made.');
+    if (!res.saved) return io.out(res.hadErrors ? 'Edit cancelled, no valid changes were saved.' : 'Edit cancelled, no changes made.');
     const doc = YAML.parse(res.text);
     if (!doc) return io.out('Edit cancelled, no changes made.');
-    if (JSON.stringify(t.cluster.stripVolatile(doc)) === JSON.stringify(t.cluster.stripVolatile(obj))) return io.out('Edit cancelled, no changes made.');
+    // YAML.stringify sorts keys, so this comparison ignores key order (the buffer is re-serialized).
+    if (YAML.stringify(t.cluster.stripVolatile(doc)) === YAML.stringify(t.cluster.stripVolatile(obj))) return io.out('Edit cancelled, no changes made.');
     delete doc.status;
     t.cluster.update(doc);
     Sim.reconcile(t.cluster);

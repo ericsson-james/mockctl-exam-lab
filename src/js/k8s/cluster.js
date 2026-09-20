@@ -8,6 +8,37 @@ class ApiError extends ShellError {
   toString() { return 'Error from server (' + this.status + '): ' + this.message; }
 }
 
+/* Field names the API server accepts in the pod-spec structures learners edit
+   most. Anything else is rejected like server-side strict field validation
+   does, so a containerPort typed at the container level fails loudly instead
+   of being stored and silently ignored. */
+const STRICT_FIELDS = {
+  podSpec: new Set(['volumes', 'initContainers', 'containers', 'ephemeralContainers', 'restartPolicy', 'terminationGracePeriodSeconds', 'activeDeadlineSeconds', 'dnsPolicy', 'nodeSelector', 'serviceAccountName', 'serviceAccount', 'automountServiceAccountToken', 'nodeName', 'hostNetwork', 'hostPID', 'hostIPC', 'shareProcessNamespace', 'securityContext', 'imagePullSecrets', 'hostname', 'subdomain', 'affinity', 'schedulerName', 'tolerations', 'hostAliases', 'priorityClassName', 'priority', 'dnsConfig', 'readinessGates', 'runtimeClassName', 'enableServiceLinks', 'preemptionPolicy', 'overhead', 'topologySpreadConstraints', 'setHostnameAsFQDN', 'os', 'hostUsers', 'schedulingGates', 'resourceClaims', 'resources']),
+  container: new Set(['name', 'image', 'command', 'args', 'workingDir', 'ports', 'envFrom', 'env', 'resources', 'resizePolicy', 'restartPolicy', 'volumeMounts', 'volumeDevices', 'livenessProbe', 'readinessProbe', 'startupProbe', 'lifecycle', 'terminationMessagePath', 'terminationMessagePolicy', 'imagePullPolicy', 'securityContext', 'stdin', 'stdinOnce', 'tty']),
+  port: new Set(['containerPort', 'hostIP', 'hostPort', 'name', 'protocol']),
+  env: new Set(['name', 'value', 'valueFrom']),
+  volumeMount: new Set(['name', 'mountPath', 'readOnly', 'subPath', 'subPathExpr', 'mountPropagation', 'recursiveReadOnly']),
+};
+/* Returns the dotted path of the first unknown field in a pod spec, or null. */
+function unknownPodSpecField(spec, prefix) {
+  const check = (o, allowed, path) => { if (o && typeof o === 'object' && !Array.isArray(o)) for (const k of Object.keys(o)) if (!allowed.has(k)) return path + '.' + k; return null; };
+  let bad = check(spec, STRICT_FIELDS.podSpec, prefix);
+  if (bad) return bad;
+  for (const list of ['initContainers', 'containers']) {
+    (spec[list] || []).forEach((c, i) => {
+      if (bad) return;
+      const p = prefix + '.' + list + '[' + i + ']';
+      bad = check(c, STRICT_FIELDS.container, p)
+        || (c.ports || []).map((x, j) => check(x, STRICT_FIELDS.port, p + '.ports[' + j + ']')).find(Boolean)
+        || (c.env || []).map((x, j) => check(x, STRICT_FIELDS.env, p + '.env[' + j + ']')).find(Boolean)
+        || (c.volumeMounts || []).map((x, j) => check(x, STRICT_FIELDS.volumeMount, p + '.volumeMounts[' + j + ']')).find(Boolean)
+        || null;
+    });
+    if (bad) return bad;
+  }
+  return null;
+}
+
 class Cluster {
   constructor({ name, version = '1.31.0', podCidr = '10.244.0.0/16', serviceCidr = '10.96.0.0/12' }) {
     this.name = name;
@@ -352,6 +383,8 @@ class Cluster {
       if (!podSpec.containers || !podSpec.containers.length) {
         throw new ApiError('Invalid', entry.kind + ' "' + md.name + '" is invalid: ' + prefix + '.containers: Required value');
       }
+      const unknown = unknownPodSpecField(podSpec, prefix);
+      if (unknown) throw new ApiError('BadRequest', entry.kind + ' in version "' + String(obj.apiVersion || entry.apiVersion).split('/').pop() + '" cannot be handled as a ' + entry.kind + ': strict decoding error: unknown field "' + unknown + '"');
       podSpec.containers.forEach((c, i) => {
         if (!c.name) throw new ApiError('Invalid', entry.kind + ' "' + md.name + '" is invalid: ' + prefix + '.containers[' + i + '].name: Required value');
         if (!c.image) throw new ApiError('Invalid', entry.kind + ' "' + md.name + '" is invalid: ' + prefix + '.containers[' + i + '].image: Required value');

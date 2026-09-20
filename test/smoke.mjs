@@ -49,7 +49,7 @@ function vimType(s) { for (const ch of s) vimKeys(ch); }
 let failures = 0;
 const since = () => output.length;
 function expect(label, needle, from = 0) {
-  const found = output.slice(from).some(l => l.includes(needle));
+  const found = (Array.isArray(from) ? from : output.slice(from)).some(l => l.includes(needle));
   if (!found) { failures++; console.log('FAIL: ' + label + ' — missing ' + JSON.stringify(needle)); console.log(output.slice(-12).join('\n')); }
   else console.log('ok:   ' + label);
 }
@@ -253,6 +253,40 @@ m = since();
 await type('k get deploy web -n frontend -o jsonpath="{.spec.replicas}"');
 expect('jsonpath reflects edit', '4', m);
 await type('k scale deploy web -n frontend --replicas=3');
+
+// ---- a rejected edit re-opens with the failure at the top; unknown fields are never stored ----
+m = since();
+type('kubectl edit deploy web -n frontend');
+await sleep(50);
+let vl = app.editor.v.lines, vi = vl.findIndex(l => /^\s+- image: nginx/.test(l));
+vimKeys(':'); vimType(String(vi + 1)); vimKeys('Enter');
+vimKeys('o'); vimType('  containerPort: 80'); vimKeys('Escape');       // sibling of image: not a Container field
+vimKeys(':'); vimType('wq'); vimKeys('Enter');
+await sleep(50);
+expect('rejected edit keeps the editor open', 'editor open', app.editor.v ? ['editor open'] : [], 0);
+expect('failure header at top of buffer', 'deployments.apps "web" was not valid:', [app.editor.v.lines[0]], 0);
+expect('failure names the unknown field', 'strict decoding error: unknown field "spec.template.spec.containers[0].containerPort"', [app.editor.v.lines[1]], 0);
+vl = app.editor.v.lines; vi = vl.findIndex(l => /^\s+containerPort: 80/.test(l));
+vimKeys(':'); vimType(String(vi + 1)); vimKeys('Enter'); vimKeys('d', 'd');   // remove the bad line again
+vimKeys(':'); vimType('wq'); vimKeys('Enter');
+await settle();
+expect('no-op edit after fixing is a cancel', 'Edit cancelled, no changes made.', m);
+m = since();
+await type('k get deploy web -n frontend -o jsonpath="{.spec.template.spec.containers[0].containerPort}"');
+expectNot('unknown field was not stored', '80', m);
+m = since();
+type('kubectl edit deploy web -n frontend');
+await sleep(50);
+vl = app.editor.v.lines; vi = vl.findIndex(l => /^\s+- image: nginx/.test(l));
+vimKeys(':'); vimType(String(vi + 1)); vimKeys('Enter'); vimKeys('o'); vimType('  containerPort: 80'); vimKeys('Escape');
+vimKeys(':'); vimType('wq'); vimKeys('Enter'); await sleep(50);
+vimKeys(':'); vimType('q!'); vimKeys('Enter');
+await settle();
+expect('quitting after a rejected save', 'Edit cancelled, no valid changes were saved.', m);
+m = since();
+seedFile('badpod.yaml', 'apiVersion: v1\nkind: Pod\nmetadata:\n  name: badpod\nspec:\n  containers:\n  - name: c\n    image: nginx\n    containerPort: 80\n');
+await type('k apply -f badpod.yaml');
+expect('apply rejects unknown container field', 'strict decoding error: unknown field "spec.containers[0].containerPort"', m);
 
 // ---- dry-run yaml + describe + logs ----
 m = since();

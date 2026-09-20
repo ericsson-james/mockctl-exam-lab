@@ -16,12 +16,12 @@ class Editor {
     document.addEventListener('keydown', (e) => this.onKey(e));
   }
 
-  open({ text = '', name = '[No Name]', validate = null, onSave = null }) {
+  open({ text = '', name = '[No Name]', validate = null, onSave = null, onInvalid = null }) {
     return new Promise((resolve) => {
       this.v = {
         lines: text.length ? text.replace(/\n$/, '').split('\n') : [''],
         r: 0, c: 0, mode: 'normal', cmdline: '', pending: '', count: '',
-        name, validate, onSave, resolve,
+        name, validate, onSave, onInvalid, resolve, errorBlock: 0, hadErrors: false,
         modified: false, everSaved: false, savedText: text,
         undo: [], redo: [], reg: null, regLinewise: false,
         search: null, searchDir: 1, showNumbers: false, message: '"' + name + '" ' + (text.length ? text.replace(/\n$/, '').split('\n').length + 'L, ' + text.length + 'B' : '[New File]'), msgErr: false,
@@ -40,7 +40,7 @@ class Editor {
     this.el.hidden = true;
     this.app.term.suspended = false;
     this.app.term.focus();
-    v.resolve({ saved, text: v.lines.join('\n') + '\n' });
+    v.resolve({ saved, text: v.lines.join('\n') + '\n', hadErrors: v.hadErrors });
   }
 
   /* ---------- helpers ---------- */
@@ -60,12 +60,28 @@ class Editor {
   save(newName) {
     const v = this.v;
     const content = this.text();
-    if (v.validate) { const err = v.validate(content); if (err) { this.setMsg(err.split('\n')[0], true); return false; } }
+    if (v.validate) { const err = v.validate(content); if (err) { this.setMsg(err.split('\n')[0], true); this.annotateError(err); return false; } }
     if (v.onSave) { const err = v.onSave(content, newName); if (err) { this.setMsg(err, true); return false; } }
     if (newName) v.name = newName;
     v.modified = false; v.everSaved = true; v.savedText = content;
     this.setMsg('"' + v.name + '" ' + v.lines.length + 'L, ' + content.length + 'B written');
     return true;
+  }
+
+  /* kubectl re-opens a rejected edit with the failure as comment lines at the
+     top of the file. Do the same in place: replace any previous failure block,
+     put the cursor on it, and leave the learner's edits untouched below. */
+  annotateError(err) {
+    const v = this.v;
+    if (!v.onInvalid) return;
+    const block = v.onInvalid(err);
+    if (!block || !block.length) return;
+    this.snapshot();
+    v.lines.splice(0, v.errorBlock, ...block);
+    v.errorBlock = block.length;
+    v.hadErrors = true;
+    v.modified = true;
+    v.r = 0; v.c = 0;
   }
 
   execCmd(raw) {
