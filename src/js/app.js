@@ -14,6 +14,8 @@ class App {
     this.world = null;
     this.exam = null;
     this.pendingSwitch = null;
+    // Staging deployments are served from beta.<domain>; mark them so nobody mistakes one for production.
+    try { if (/^beta\./i.test(String(location.hostname || ''))) document.getElementById('betaTag').hidden = false; } catch (e) { /* not in a browser */ }
     registry.register({ name: 'kubectl', usage: 'kubectl <command> [flags]', desc: 'the Kubernetes CLI', run: (ctx, args, io) => this.kubectl.run(ctx, args, io) });
     document.addEventListener('paste', (e) => {
       if (!this.editor.v) return;

@@ -40,6 +40,7 @@ header {
 }
 header .brand { color: var(--dim); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 header .brand b { color: var(--amber); font-weight: 600; }
+header .betatag { color: var(--bg); background: var(--ember); border-radius: 3px; padding: 1px 5px; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; }
 header .hright { flex: none; display: flex; align-items: center; gap: 12px; }
 .timer { font-variant-numeric: tabular-nums; color: var(--teal); border: 1px solid #3a4a44; border-radius: 3px; padding: 2px 10px; font-size: 13px; letter-spacing: 0.06em; }
 .timer.warn { color: var(--ember); border-color: #5a3a30; }

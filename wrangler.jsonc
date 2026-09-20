@@ -12,5 +12,15 @@
   "routes": [
     { "pattern": "mockctl.com", "custom_domain": true },
     { "pattern": "www.mockctl.com", "custom_domain": true }
-  ]
+  ],
+  // Staging: same build, separate Worker, own hostname. Deploy with `npm run deploy:beta`.
+  // Production only changes on `npm run deploy`.
+  "env": {
+    "beta": {
+      "name": "mockctl-exam-lab-beta",
+      "routes": [
+        { "pattern": "beta.mockctl.com", "custom_domain": true }
+      ]
+    }
+  }
 }

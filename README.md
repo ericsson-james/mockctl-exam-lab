@@ -34,7 +34,8 @@ has no server, no account, and no runtime dependencies.
 npm test          # build + syntax check + end-to-end smoke test (drives the whole exam)
 npm run build     # just build dist/
 open dist/index.html
-npm run deploy    # build + publish dist/ to Cloudflare Workers (run `npx wrangler login` once first)
+npm run deploy:beta   # build + publish to beta.mockctl.com (try changes here first)
+npm run deploy        # build + publish to mockctl.com (run `npx wrangler login` once first)
 ```
 
 No runtime dependencies; the one dev dependency is `wrangler`, used only to
@@ -43,7 +44,9 @@ into one self-contained page: `dist/index.html`. The included GitHub Actions
 workflow can publish that page to GitHub Pages (manual trigger; enable Pages
 with source "GitHub Actions" once in the repository settings).
 `wrangler.jsonc` publishes the same `dist/` to Cloudflare Workers as static
-assets, at `mockctl-exam-lab.<your-subdomain>.workers.dev` or a custom domain.
+assets. Changes go to `beta.mockctl.com` first (`deploy:beta`, a separate
+Worker, marked "beta" in the header and excluded from search) and to
+`mockctl.com` only with `deploy`.
 
 Five practice exams ship in `exams/`: two CKA exams (18 and 17 questions,
 covering the full public curriculum between them) and three CKS exams

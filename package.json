@@ -7,7 +7,8 @@
     "build": "node build.mjs",
     "check": "node build.mjs && node --check dist/bundle.js",
     "test": "node build.mjs && node --check dist/bundle.js && node test/smoke.mjs",
-    "deploy": "node build.mjs && wrangler deploy"
+    "deploy": "node build.mjs && wrangler deploy",
+    "deploy:beta": "node build.mjs && wrangler deploy --env beta"
   },
   "license": "MIT",
   "repository": {
