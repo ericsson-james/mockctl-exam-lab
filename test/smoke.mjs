@@ -288,6 +288,34 @@ seedFile('badpod.yaml', 'apiVersion: v1\nkind: Pod\nmetadata:\n  name: badpod\ns
 await type('k apply -f badpod.yaml');
 expect('apply rejects unknown container field', 'strict decoding error: unknown field "spec.containers[0].containerPort"', m);
 
+// ---- editor: visual mode, text objects, dot repeat, paste in any mode, multi-line paste at the prompt ----
+seedFile('edit.yaml', 'image: nginx:1.25\nreplicas: 1\nfoo\nbar\nbaz\n');
+type('vim edit.yaml');
+await sleep(50);
+{
+  const V = () => app.editor.v;
+  const bufIs = (label, want) => expect(label, want, [V().lines.join('\n')], 0);
+  vimKeys('w', 'w'); vimType('ciw'); vimType('httpd'); vimKeys('Escape');
+  bufIs('ciw changes the word under the cursor', 'image: httpd:1.25\nreplicas: 1\nfoo\nbar\nbaz');
+  vimKeys('j', 'V', 'j', 'd');
+  bufIs('V j d deletes the selected lines', 'image: httpd:1.25\nbar\nbaz');
+  expect('visual mode ends after the operator', 'normal', [V().mode], 0);
+  vimKeys('.');
+  bufIs('. repeats the last change', 'image: httpd:1.25');
+  vimKeys('u');
+  app.editor.pasteText('kind: Deployment\n');
+  bufIs('paste in normal mode inserts verbatim before the cursor line', 'image: httpd:1.25\nkind: Deployment\nbar\nbaz');
+  vimKeys(':'); vimType('2,3d'); vimKeys('Enter');
+  bufIs(':2,3d deletes a range', 'image: httpd:1.25\nbaz');
+  vimKeys(':'); vimType('q!'); vimKeys('Enter');
+}
+await settle();
+m = since();
+els.cmd._handlers.paste({ clipboardData: { getData: () => 'echo pasted-one\necho pasted-two\n' }, preventDefault() {} });
+await settle(); await settle();
+expect('multi-line paste at the prompt runs the first line', 'pasted-one', m);
+expect('multi-line paste at the prompt runs the second line', 'pasted-two', m);
+
 // ---- dry-run yaml + describe + logs ----
 m = since();
 await type('k run tmp --image=nginx $do');

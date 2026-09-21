@@ -107,6 +107,16 @@ output via `journalctl -u falco`, `sysctl` with persistent per-node kernel
 parameters, and `sha256sum`. NetworkPolicy `ipBlock` peers match pod IPs
 against the CIDR (with `except`).
 
+**Editor** — `vim` (also `vi`, `nano`) with normal, insert, visual (`v`),
+visual-line (`V`), command and search modes; counts; motions `h j k l w b e 0 ^ $
+gg G f t F T ; , % { } H M L`; operators `d y c > <` with any motion, text objects
+(`ciw`, `di"`, `da{`…) and `dd`/`yy`/`cc`; `x X r s S C D J ~ o O i I a A p P u`,
+`Ctrl-R` and `.` to repeat; `:w :q :wq :x :N :$ :[range]d|y|s|sort :g/re/d
+:%s/a/b/g :set nu :noh`; autoindent and two-space Tab. **Paste** with
+Cmd/Ctrl+V or Shift+Insert works in every editor mode and inserts the text
+verbatim, so YAML copied from the docs keeps its indentation; a multi-line
+paste at the shell prompt runs line by line, like a real terminal.
+
 **Helm and Kustomize (CKAD)** — `helm repo add|list|update`, `search repo`,
 `show values`, `install`, `upgrade` (`--set`, `-f`, `--version`,
 `--create-namespace`), `list`, `status`, `history`, `rollback`, `uninstall`,

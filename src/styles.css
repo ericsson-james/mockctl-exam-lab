@@ -113,6 +113,7 @@ main { flex: 1; display: flex; min-height: 0; }
 #vimText .lnum { color: var(--dim); }
 #vimText .cur { background: var(--text); color: var(--bg); }
 #vimText .hl { background: #4a3d28; }
+#vimText .vsel { background: #4d4130; }
 #vimStatus { flex: none; display: flex; justify-content: space-between; gap: 12px; padding: 3px 12px; background: var(--panel); border-top: 1px solid var(--line); color: var(--dim); white-space: pre; }
 #vimStatus .mode { color: var(--amber); font-weight: 600; }
 #vimCmd { flex: none; padding: 3px 12px 6px; min-height: 1.45em; white-space: pre-wrap; }

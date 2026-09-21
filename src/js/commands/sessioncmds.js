@@ -58,7 +58,10 @@ registry.register({
     io.out('    systemctl / journalctl / etcdctl / kubeadm / apt-get   all work on nodes');
     io.out('');
     io.out('Files & editing', 'teal');
-    io.out('    vim pod.yaml                       vim with YAML-friendly settings (:set nu, undo, yank)');
+    io.out('    vim pod.yaml                       vim: visual mode (v V), d/y/c + motions and text objects (dd ciw di"),');
+    io.out('                                       . repeat, u / Ctrl-R, :5,10d, :%s/a/b/g, :g/re/d, :set nu, :help');
+    io.out('    paste                              Cmd/Ctrl+V (or Shift+Insert) pastes into vim in any mode, verbatim;');
+    io.out('                                       a multi-line paste at the prompt runs line by line');
     io.out('    kubectl edit deploy/web            opens the object in vim; :wq applies it');
     io.out('    kubectl apply -f pod.yaml          files live on the host you are logged into');
     io.out('');

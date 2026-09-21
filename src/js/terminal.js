@@ -14,6 +14,8 @@ class Terminal {
     this.histIdx = -1;
     this.histDraft = '';
     this.cmdEl.addEventListener('keydown', (e) => this.onKey(e));
+    this.pasteQueue = null;
+    this.cmdEl.addEventListener('paste', (e) => this.onPaste(e));
     this.termEl.addEventListener('mouseup', () => {
       if (this.suspended) return;
       const sel = window.getSelection();
@@ -45,7 +47,44 @@ class Terminal {
     this.scroll();
     return new Promise((resolve) => {
       this.pending = { resolve, prompt, mask, useHistory, completer };
+      if (this.pasteQueue) setTimeout(() => this.drainPaste(), 0);
     });
+  }
+
+  /* Enter at the prompt: remember the line and hand it to whoever is waiting. */
+  submit() {
+    const p = this.pending;
+    if (!p || p.choice) return;
+    const v = this.cmdEl.value;
+    if (p.useHistory && v.trim() && this.history[this.history.length - 1] !== v.trim()) this.history.push(v.trim());
+    this.finishRead(v);
+  }
+
+  /* A multi-line paste at the prompt runs each complete line in turn, the way a
+     terminal does; text after the last newline is left in the input to edit. */
+  onPaste(e) {
+    if (this.suspended || !this.pending || this.pending.choice) return;
+    const text = ((e.clipboardData || window.clipboardData) && (e.clipboardData || window.clipboardData).getData('text')) || '';
+    if (!text.includes('\n')) return;
+    e.preventDefault();
+    const input = this.cmdEl;
+    const lines = text.replace(/\r/g, '').split('\n');
+    const tail = lines.pop();
+    const first = lines.shift();
+    const start = input.selectionStart === undefined || input.selectionStart === null ? input.value.length : input.selectionStart;
+    const end = input.selectionEnd === undefined || input.selectionEnd === null ? input.value.length : input.selectionEnd;
+    const before = input.value.slice(0, start), after = input.value.slice(end);
+    this.pasteQueue = { lines, tail: tail + after };
+    input.value = before + first;
+    this.submit();
+  }
+  drainPaste() {
+    const q = this.pasteQueue;
+    if (!q || !this.pending || this.pending.choice || this.suspended) return;
+    if (q.lines.length) { this.cmdEl.value = q.lines.shift(); this.submit(); return; }
+    this.cmdEl.value = q.tail || '';
+    this.pasteQueue = null;
+    try { this.cmdEl.setSelectionRange(this.cmdEl.value.length, this.cmdEl.value.length); } catch (err) { /* stub */ }
   }
 
   /* Show a numbered menu; resolves with the chosen index (or null on Ctrl+C).
@@ -114,9 +153,7 @@ class Terminal {
       return;
     }
     if (e.key === 'Enter') {
-      const v = input.value;
-      if (p.useHistory && v.trim() && this.history[this.history.length - 1] !== v.trim()) this.history.push(v.trim());
-      this.finishRead(v);
+      this.submit();
     } else if (e.key === 'c' && e.ctrlKey) {
       e.preventDefault();
       this.finishRead(null, '^C');
