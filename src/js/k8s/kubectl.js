@@ -146,8 +146,8 @@ class Kubectl {
       const parsed = trimmed.startsWith('{') ? [JSON.parse(trimmed)] : YAML.parseAll(text);
       for (const d of parsed) {
         if (d === null) continue;
-        if (d && d.kind === 'List' && Array.isArray(d.items)) docs.push(...d.items);
-        else docs.push(d);
+        const items = d && d.kind === 'List' && Array.isArray(d.items) ? d.items : [d];
+        for (const it of items) { if (it && typeof it === 'object') Object.defineProperty(it, '_file', { value: p, enumerable: false, configurable: true }); docs.push(it); }
       }
     };
     for (const f of files) readOne(f);
@@ -266,7 +266,7 @@ class Kubectl {
     if (parsed.flags.help) { io.out('See https://kubernetes.io/docs/reference/kubectl/ for kubectl ' + verb + ' usage.'); return; }
     const method = 'cmd_' + verb.replace(/-/g, '_');
     if (typeof this[method] !== 'function') {
-      if (['cp', 'port-forward', 'attach', 'proxy', 'debug', 'certificate', 'plugin', 'kustomize', 'diff'].includes(verb)) throw new KubectlError('"' + verb + '" is not supported in this simulator');
+      if (['cp', 'port-forward', 'attach', 'proxy', 'debug', 'certificate', 'plugin', 'diff'].includes(verb)) throw new KubectlError('"' + verb + '" is not supported in this simulator');
       throw new KubectlError('unknown command "' + verb + '" for "kubectl"\n\nDid you mean this?\n\tget\n\tdescribe');
     }
     await this[method](ctx, parsed, io);
@@ -337,8 +337,8 @@ class Kubectl {
   async cmd_create(ctx, { flags, positional, rest }, io) {
     const t = this.target(ctx, flags);
     this._cluster = t.cluster;
-    if (flags.filename) {
-      for (const doc of this.readFiles(ctx, flags)) this.createObject(t, doc, flags, io, 'created');
+    if (flags.filename || flags.kustomize) {
+      for (const doc of (flags.kustomize ? this.kustomizeBuild(ctx, t, flags.kustomize) : this.readFiles(ctx, flags))) { this.mapDoc(t, doc); this.createObject(t, doc, flags, io, 'created'); }
       return;
     }
     const sub = positional[0];
@@ -431,7 +431,18 @@ class Kubectl {
         break;
       }
       case 'job': {
-        need(name, 'NAME is required'); need(flags.image, 'required flag(s) "image" not set');
+        need(name, 'NAME is required');
+        if (flags.from) {
+          const m = String(flags.from).match(/^(?:cronjob|cj|cronjobs)(?:\.batch)?\/(.+)$/i);
+          if (!m) throw new KubectlError('unknown object type "' + String(flags.from).split('/')[0] + '" for --from (only cronjob/NAME is supported)');
+          const cj = t.cluster.getByKindName('CronJob', ns, m[1]);
+          if (!cj) throw new ApiError('NotFound', 'cronjobs.batch "' + m[1] + '" not found');
+          const tpl = cj.spec.jobTemplate || {};
+          obj = { apiVersion: 'batch/v1', kind: 'Job', metadata: { name, namespace: ns, annotations: { 'cronjob.kubernetes.io/instantiate': 'manual' }, labels: deepClone((tpl.metadata || {}).labels || {}) }, spec: deepClone(tpl.spec || {}) };
+          if (!Object.keys(obj.metadata.labels).length) delete obj.metadata.labels;
+          break;
+        }
+        need(flags.image, 'required flag(s) "image" not set');
         const c = { name, image: flags.image, resources: {} };
         if (rest && rest.length) c.command = rest;
         obj = { apiVersion: 'batch/v1', kind: 'Job', metadata: { name, namespace: ns }, spec: { template: { metadata: {}, spec: { containers: [c], restartPolicy: 'Never' } } } };
@@ -625,10 +636,9 @@ class Kubectl {
   cmd_apply(ctx, { flags }, io) {
     const t = this.target(ctx, flags);
     this._cluster = t.cluster;
-    if (flags.kustomize) throw new KubectlError('kustomize (-k) is not supported in this simulator');
-    const docs = this.readFiles(ctx, flags);
+    const docs = flags.kustomize ? this.kustomizeBuild(ctx, t, flags.kustomize) : this.readFiles(ctx, flags);
     for (const doc of docs) {
-      const entry = t.cluster.entryFor(doc);
+      const entry = this.mapDoc(t, doc);
       doc.metadata = doc.metadata || {};
       if (entry.namespaced) {
         if (flags.namespace && doc.metadata.namespace && doc.metadata.namespace !== flags.namespace) throw new KubectlError('the namespace from the provided object "' + doc.metadata.namespace + '" does not match the namespace "' + flags.namespace + '". You must pass \'--namespace=' + doc.metadata.namespace + '\' to perform this operation.');
@@ -651,7 +661,7 @@ class Kubectl {
     const t = this.target(ctx, flags);
     this._cluster = t.cluster;
     for (const doc of this.readFiles(ctx, flags)) {
-      const entry = t.cluster.entryFor(doc);
+      const entry = this.mapDoc(t, doc);
       if (entry.namespaced) doc.metadata.namespace = doc.metadata.namespace || t.ns;
       if (flags.force) {
         const ex = t.cluster.get(entry, doc.metadata.namespace, doc.metadata.name);
@@ -669,9 +679,9 @@ class Kubectl {
     const t = this.target(ctx, flags);
     this._cluster = t.cluster;
     const targets = [];
-    if (flags.filename) {
-      for (const doc of this.readFiles(ctx, flags)) {
-        const entry = t.cluster.entryFor(doc);
+    if (flags.filename || flags.kustomize) {
+      for (const doc of (flags.kustomize ? this.kustomizeBuild(ctx, t, flags.kustomize) : this.readFiles(ctx, flags))) {
+        const entry = this.mapDoc(t, doc);
         targets.push({ entry, ns: entry.namespaced ? (doc.metadata.namespace || t.ns) : null, name: doc.metadata.name });
       }
     } else {
@@ -1358,24 +1368,182 @@ class Kubectl {
     try { patch = /^\s*[\[{]/.test(flags.patch) ? JSON.parse(flags.patch) : YAML.parse(flags.patch); } catch (e) { throw new KubectlError('unable to parse "' + flags.patch + '": ' + e.message); }
     for (const { entry, obj } of targets) {
       let next;
-      if (flags.type === 'json') {
-        next = deepClone(obj);
-        for (const op of patch) {
-          const keys = op.path.split('/').slice(1).map(k => k.replace(/~1/g, '/').replace(/~0/g, '~'));
-          let cur = next;
-          for (let i = 0; i < keys.length - 1; i++) { if (cur[keys[i]] === undefined) cur[keys[i]] = /^\d+$/.test(keys[i + 1]) ? [] : {}; cur = cur[keys[i]]; }
-          const last = keys[keys.length - 1];
-          if (op.op === 'add' || op.op === 'replace') { if (Array.isArray(cur) && last === '-') cur.push(op.value); else if (Array.isArray(cur) && op.op === 'add') cur.splice(parseInt(last, 10), 0, op.value); else cur[last] = op.value; }
-          else if (op.op === 'remove') { if (Array.isArray(cur)) cur.splice(parseInt(last, 10), 1); else delete cur[last]; }
-          else throw new KubectlError('unsupported json patch op ' + op.op);
-        }
-      } else next = flags.type === 'merge' ? deepMerge(obj, patch) : strategicMerge(obj, patch);
+      if (flags.type === 'json') next = this.jsonPatch(obj, patch);
+      else next = flags.type === 'merge' ? deepMerge(obj, patch) : strategicMerge(obj, patch);
       const before = JSON.stringify(t.cluster.stripVolatile(obj));
       const updated = t.cluster.update(next);
       Sim.reconcile(t.cluster);
       const changed = JSON.stringify(t.cluster.stripVolatile(updated)) !== before;
       io.out(t.cluster.kinds.fullName(entry, obj.metadata.name) + ' patched' + (changed ? '' : ' (no change)'));
     }
+  }
+
+  /* RFC 6902 patch (add/replace/remove/test) on a clone. Shared by kubectl patch and kustomize. */
+  jsonPatch(obj, ops) {
+    const next = deepClone(obj);
+    for (const op of ops) {
+      if (!op || typeof op.path !== 'string') throw new KubectlError('json patch op is missing a path');
+      const keys = op.path.split('/').slice(1).map(k => k.replace(/~1/g, '/').replace(/~0/g, '~'));
+      let cur = next;
+      for (let i = 0; i < keys.length - 1; i++) { if (cur[keys[i]] === undefined) cur[keys[i]] = /^\d+$/.test(keys[i + 1]) ? [] : {}; cur = cur[keys[i]]; }
+      const last = keys[keys.length - 1];
+      if (op.op === 'add' || op.op === 'replace') { if (Array.isArray(cur) && last === '-') cur.push(op.value); else if (Array.isArray(cur) && op.op === 'add') cur.splice(parseInt(last, 10), 0, op.value); else cur[last] = op.value; }
+      else if (op.op === 'remove') { if (Array.isArray(cur)) cur.splice(parseInt(last, 10), 1); else delete cur[last]; }
+      else if (op.op === 'test') { if (JSON.stringify(cur[last]) !== JSON.stringify(op.value)) throw new KubectlError('test operation for path ' + op.path + ' failed'); }
+      else throw new KubectlError('unsupported json patch op ' + op.op);
+    }
+    return next;
+  }
+
+  /* entryFor with kubectl's wording when apiVersion/kind do not map to anything. */
+  mapDoc(t, doc) {
+    try { return t.cluster.entryFor(doc); }
+    catch (e) {
+      if (e instanceof ApiError && /^no matches for kind/.test(e.message)) {
+        const md = (doc && doc.metadata) || {};
+        throw new RawError('error: resource mapping not found for name: "' + (md.name || '') + '" namespace: "' + (md.namespace || '') + '" from "' + (doc._file || 'STDIN') + '": ' + e.message + '\nensure CRDs are installed first');
+      }
+      throw e;
+    }
+  }
+
+  /* ---------- kustomize ---------- */
+  kustomizeBuild(ctx, t, dirArg, depth = 0) {
+    const s = ctx.session;
+    const parts = s.resolvePath(dirArg);
+    const dirPath = pathString(parts);
+    let dirNode = null;
+    try { dirNode = s.fs.node(parts, s.user); } catch (e) { dirNode = null; }
+    if (!dirNode) throw new RawError("error: must build at directory: not a valid directory: evalsymlink failure on '" + dirPath + "' : lstat " + dirPath + ": no such file or directory");
+    if (!dirNode.isDir) throw new RawError("error: must build at directory: not a valid directory: '" + dirPath + "' is not a directory");
+    const kfile = ['kustomization.yaml', 'kustomization.yml', 'Kustomization'].find(n => s.fs.exists(parts.concat([n]), s.user));
+    if (!kfile) throw new RawError("error: unable to find one of 'kustomization.yaml', 'kustomization.yml' or 'Kustomization' in directory '" + dirPath + "'");
+    let k;
+    try { k = YAML.parse(s.fs.readFile(parts.concat([kfile]), s.user)) || {}; } catch (e) { throw new RawError('error: ' + kfile + ': ' + e.message); }
+    const join = (p) => (p.startsWith('/') ? p : dirArg.replace(/\/$/, '') + '/' + p);
+    const readRel = (p, what) => { try { return s.fs.readFile(s.resolvePath(join(p)), s.user); } catch (e) { throw new RawError("error: " + what + ": evalsymlink failure on '" + pathString(s.resolvePath(join(p))) + "' : lstat: no such file or directory"); } };
+    const tagOrig = (d, orig) => Object.defineProperty(d, '_orig', { value: orig, enumerable: false, configurable: true });
+    const orig = (d) => d._orig || { kind: d.kind, name: d.metadata && d.metadata.name };
+    let docs = [];
+    for (const r of [].concat(k.resources || [], k.bases || [])) {
+      const rp = s.resolvePath(join(r));
+      let node = null;
+      try { node = s.fs.node(rp, s.user); } catch (e) { node = null; }
+      if (!node) throw new RawError("error: accumulating resources: accumulation err='accumulating resources from '" + r + "': evalsymlink failure on '" + pathString(rp) + "' : lstat " + pathString(rp) + ": no such file or directory'");
+      if (node.isDir) { if (depth > 12) throw new RawError('error: kustomization recursion too deep at ' + r); docs.push(...this.kustomizeBuild(ctx, t, join(r), depth + 1)); continue; }
+      let parsed;
+      try { parsed = YAML.parseAll(s.fs.readFile(rp, s.user)); } catch (e) { throw new RawError('error: ' + r + ': ' + e.message); }
+      for (const d of parsed) { if (!d) continue; const items = d.kind === 'List' ? (d.items || []) : [d]; for (const it of items) { it.metadata = it.metadata || {}; if (!it._orig) tagOrig(it, { kind: it.kind, name: it.metadata.name }); docs.push(it); } }
+    }
+    // generators
+    const genOpts = k.generatorOptions || {};
+    const kvData = (g, what) => {
+      const data = {};
+      for (const l of g.literals || []) { const i = String(l).indexOf('='); if (i === -1) throw new RawError('error: ' + what + ' ' + g.name + ': literal "' + l + '" must be in the form key=value'); data[String(l).slice(0, i)] = String(l).slice(i + 1); }
+      for (const f of g.files || []) { const i = String(f).indexOf('='); const key = i === -1 ? String(f).split('/').pop() : String(f).slice(0, i); const p = i === -1 ? String(f) : String(f).slice(i + 1); data[key] = readRel(p, 'loading KV pairs'); }
+      for (const e of g.envs || []) for (const line of readRel(e, 'loading KV pairs').split('\n')) { const tl = line.trim(); if (!tl || tl.startsWith('#')) continue; const i = tl.indexOf('='); if (i !== -1) data[tl.slice(0, i)] = tl.slice(i + 1); }
+      return data;
+    };
+    const genHash = (obj) => shortHash(JSON.stringify(obj), 10).replace(/[^a-z0-9]/g, 'k').slice(0, 10);
+    const gen = (g, kind, dataMap, what) => {
+      const disable = genOpts.disableNameSuffixHash || (g.options && g.options.disableNameSuffixHash);
+      const obj = { apiVersion: 'v1', kind, metadata: { name: g.name }, data: dataMap };
+      if (kind === 'Secret') obj.type = g.type || 'Opaque';
+      if (g.namespace) obj.metadata.namespace = g.namespace;
+      const lbl = Object.assign({}, genOpts.labels || {}, (g.options && g.options.labels) || {}); if (Object.keys(lbl).length) obj.metadata.labels = lbl;
+      const ann = Object.assign({}, genOpts.annotations || {}, (g.options && g.options.annotations) || {}); if (Object.keys(ann).length) obj.metadata.annotations = ann;
+      tagOrig(obj, { kind, name: g.name, hash: disable ? null : genHash(obj) });
+      docs.push(obj);
+    };
+    for (const g of k.configMapGenerator || []) gen(g, 'ConfigMap', kvData(g, 'configMapGenerator'), 'configMapGenerator');
+    for (const g of k.secretGenerator || []) gen(g, 'Secret', Object.fromEntries(Object.entries(kvData(g, 'secretGenerator')).map(([kk, v]) => [kk, btoa(unescape(encodeURIComponent(v)))])), 'secretGenerator');
+    const isNamespaced = (d) => { try { return t.cluster.entryFor(d).namespaced; } catch (e) { return d.kind !== 'Namespace'; } };
+    const podSpecs = (d) => { const out = []; if (!d.spec) return out; if (d.kind === 'Pod') out.push(d.spec); if (d.spec.template && d.spec.template.spec) out.push(d.spec.template.spec); if (d.spec.jobTemplate && d.spec.jobTemplate.spec && d.spec.jobTemplate.spec.template) out.push(d.spec.jobTemplate.spec.template.spec); return out.filter(Boolean); };
+    const templates = (d) => { const out = []; if (!d.spec) return out; if (d.spec.template) out.push(d.spec.template); if (d.spec.jobTemplate) { out.push(d.spec.jobTemplate); if (d.spec.jobTemplate.spec && d.spec.jobTemplate.spec.template) out.push(d.spec.jobTemplate.spec.template); } return out; };
+    // namespace
+    if (k.namespace) for (const d of docs) if (isNamespaced(d)) d.metadata.namespace = k.namespace;
+    // names: prefix/suffix, generator hashes; then fix references to renamed objects
+    const renames = new Map();
+    for (const d of docs) {
+      const o = orig(d);
+      if (d.kind === 'Namespace' && !o.hash) continue;
+      const base = o.name;
+      const newName = (k.namePrefix || '') + base + (k.nameSuffix || '') + (o.hash ? '-' + o.hash : '');
+      if (newName !== d.metadata.name) { renames.set(d.kind + '/' + base, newName); d.metadata.name = newName; }
+    }
+    const ren = (kind, name) => (name !== undefined && renames.has(kind + '/' + name) ? renames.get(kind + '/' + name) : name);
+    for (const d of docs) {
+      for (const ps of podSpecs(d)) {
+        for (const c of [].concat(ps.containers || [], ps.initContainers || [])) {
+          for (const e of c.env || []) { const vf = e.valueFrom || {}; if (vf.configMapKeyRef) vf.configMapKeyRef.name = ren('ConfigMap', vf.configMapKeyRef.name); if (vf.secretKeyRef) vf.secretKeyRef.name = ren('Secret', vf.secretKeyRef.name); }
+          for (const e of c.envFrom || []) { if (e.configMapRef) e.configMapRef.name = ren('ConfigMap', e.configMapRef.name); if (e.secretRef) e.secretRef.name = ren('Secret', e.secretRef.name); }
+        }
+        for (const v of ps.volumes || []) { if (v.configMap) v.configMap.name = ren('ConfigMap', v.configMap.name); if (v.secret) v.secret.secretName = ren('Secret', v.secret.secretName); if (v.persistentVolumeClaim) v.persistentVolumeClaim.claimName = ren('PersistentVolumeClaim', v.persistentVolumeClaim.claimName); }
+        if (ps.serviceAccountName) ps.serviceAccountName = ren('ServiceAccount', ps.serviceAccountName);
+      }
+      if (d.kind === 'Ingress' && d.spec) { for (const r of d.spec.rules || []) for (const p of (r.http && r.http.paths) || []) if (p.backend && p.backend.service) p.backend.service.name = ren('Service', p.backend.service.name); if (d.spec.defaultBackend && d.spec.defaultBackend.service) d.spec.defaultBackend.service.name = ren('Service', d.spec.defaultBackend.service.name); }
+      if (['RoleBinding', 'ClusterRoleBinding'].includes(d.kind)) { for (const sub of d.subjects || []) if (sub.kind === 'ServiceAccount') sub.name = ren('ServiceAccount', sub.name); if (d.roleRef) d.roleRef.name = ren(d.roleRef.kind, d.roleRef.name); }
+    }
+    // labels / annotations
+    const addLabels = (d, pairs, selectors, tpls) => {
+      d.metadata.labels = Object.assign({}, d.metadata.labels || {}, pairs);
+      if (selectors && d.spec) {
+        if (d.kind === 'Service') d.spec.selector = Object.assign({}, d.spec.selector || {}, pairs);
+        else if (['Deployment', 'ReplicaSet', 'DaemonSet', 'StatefulSet', 'Job', 'PodDisruptionBudget'].includes(d.kind)) { d.spec.selector = d.spec.selector || {}; d.spec.selector.matchLabels = Object.assign({}, d.spec.selector.matchLabels || {}, pairs); }
+        else if (d.kind === 'NetworkPolicy') { d.spec.podSelector = d.spec.podSelector || {}; d.spec.podSelector.matchLabels = Object.assign({}, d.spec.podSelector.matchLabels || {}, pairs); }
+      }
+      if (tpls) for (const tp of templates(d)) { tp.metadata = tp.metadata || {}; tp.metadata.labels = Object.assign({}, tp.metadata.labels || {}, pairs); }
+    };
+    if (k.commonLabels) for (const d of docs) addLabels(d, k.commonLabels, true, true);
+    for (const l of k.labels || []) for (const d of docs) addLabels(d, l.pairs || {}, !!l.includeSelectors, !!l.includeTemplates || !!l.includeSelectors);
+    if (k.commonAnnotations) for (const d of docs) { d.metadata.annotations = Object.assign({}, d.metadata.annotations || {}, k.commonAnnotations); for (const tp of templates(d)) { tp.metadata = tp.metadata || {}; tp.metadata.annotations = Object.assign({}, tp.metadata.annotations || {}, k.commonAnnotations); } }
+    // patches
+    const patchList = [].concat(
+      (k.patches || []).map(p => ({ path: p.path, patch: p.patch, target: p.target })),
+      (k.patchesStrategicMerge || []).map(p => (typeof p === 'string' ? { path: p } : { patch: p })),
+      (k.patchesJson6902 || []).map(p => ({ path: p.path, patch: p.patch, target: p.target })),
+    );
+    for (const p of patchList) {
+      const content = p.patch !== undefined ? (typeof p.patch === 'string' ? p.patch : YAML.stringify(p.patch)) : readRel(p.path, 'loading patch');
+      let parsed;
+      try { parsed = YAML.parse(content); } catch (e) { throw new RawError('error: patch ' + (p.path || '') + ': ' + e.message); }
+      const isJson = Array.isArray(parsed);
+      const tg = p.target;
+      const targets = docs.filter(d => {
+        const o = orig(d);
+        if (tg) return (!tg.kind || d.kind === tg.kind) && (!tg.name || o.name === tg.name || d.metadata.name === tg.name || new RegExp('^' + tg.name + '$').test(o.name || '')) && (!tg.namespace || d.metadata.namespace === tg.namespace) && (!tg.labelSelector || labelsMatch(parseLabelSelector(tg.labelSelector), d.metadata.labels || {})) && (tg.group === undefined || (d.apiVersion || '').split('/')[0] === tg.group || (tg.group === '' && !(d.apiVersion || '').includes('/'))) && (!tg.version || (d.apiVersion || '').split('/').pop() === tg.version);
+        if (isJson || !parsed || typeof parsed !== 'object') return false;
+        const pm = parsed.metadata || {};
+        return d.kind === parsed.kind && (o.name === pm.name || d.metadata.name === pm.name);
+      });
+      if (!targets.length) throw new RawError('error: no matches for Id ' + JSON.stringify(tg || { kind: parsed && parsed.kind, name: parsed && parsed.metadata && parsed.metadata.name }) + '; failed to find unique target for patch');
+      for (const d of targets) {
+        const i = docs.indexOf(d), o = orig(d);
+        let next;
+        if (isJson) next = this.jsonPatch(d, parsed);
+        else { const sm = deepClone(parsed); delete sm.apiVersion; delete sm.kind; if (sm.metadata) { delete sm.metadata.name; delete sm.metadata.namespace; if (!Object.keys(sm.metadata).length) delete sm.metadata; } next = strategicMerge(d, sm); }
+        tagOrig(next, o);
+        docs[i] = next;
+      }
+    }
+    // images
+    for (const im of k.images || []) for (const d of docs) for (const ps of podSpecs(d)) for (const c of [].concat(ps.containers || [], ps.initContainers || [])) {
+      const cur = String(c.image || '');
+      const [nameTag] = cur.split('@');
+      const m = nameTag.match(/^(.*?)(?::([^/:]+))?$/);
+      if (!m || m[1] !== im.name) continue;
+      const nm = im.newName || m[1];
+      c.image = im.digest ? nm + '@' + im.digest : nm + ':' + (im.newTag !== undefined ? im.newTag : (m[2] || 'latest'));
+    }
+    // replicas
+    for (const r of k.replicas || []) for (const d of docs) if (['Deployment', 'ReplicaSet', 'StatefulSet'].includes(d.kind) && (orig(d).name === r.name || d.metadata.name === r.name)) { d.spec = d.spec || {}; d.spec.replicas = r.count; }
+    return docs;
+  }
+
+  cmd_kustomize(ctx, { flags, positional }, io) {
+    const t = this.target(ctx, flags, { needApi: false });
+    const docs = this.kustomizeBuild(ctx, t, positional[0] || '.');
+    io.out(docs.map(d => YAML.stringify(d).replace(/\n$/, '')).join('\n---\n'));
   }
 
   async cmd_wait(ctx, { flags, positional }, io) {

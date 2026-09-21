@@ -1,7 +1,7 @@
 {
   "name": "mockctl-exam-lab",
   "version": "0.2.0",
-  "description": "mockctl exam lab: a free, browser-only practice environment modeled on the CKA and CKS exam formats. Simulated clusters, kubectl, node tooling, security tooling, timed questions and grading. No network calls. Not affiliated with The Linux Foundation or CNCF.",
+  "description": "mockctl exam lab: a free, browser-only practice environment modeled on the CKA, CKAD and CKS exam formats. Simulated clusters, kubectl, node tooling, security tooling, timed questions and grading. No network calls. Not affiliated with The Linux Foundation or CNCF.",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
@@ -22,6 +22,7 @@
   "keywords": [
     "kubernetes",
     "cka",
+    "ckad",
     "cks",
     "practice",
     "exam",

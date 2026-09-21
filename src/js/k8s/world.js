@@ -75,7 +75,7 @@ class World {
     const base = new Host({ hostname: baseCfg.hostname || 'cka-base', ip: baseCfg.ip || '10.0.0.5', role: 'base', latency: 1, homeFiles: baseCfg.homeFiles || {} });
     base.addUser(new User({ name: this.candidate }));
     base.addUser(new User({ name: 'root', admin: true }));
-    base.packages = { kubectl: this.clientVersion + '-1.1', vim: '9.1', jq: '1.7' };
+    base.packages = { kubectl: this.clientVersion + '-1.1', vim: '9.1', jq: '1.7', helm: '3.16.2' };
     this.base = this.addHost(base);
 
     const contexts = {};
@@ -201,9 +201,36 @@ class World {
       const r = deepClone(raw);
       const sim = r._sim || {};
       const age = r._ageSeconds;
-      delete r._sim; delete r._ageSeconds;
+      const revisions = r._revisions;
+      delete r._sim; delete r._ageSeconds; delete r._revisions;
       r.metadata = r.metadata || {};
       r.metadata.creationTimestamp = r.metadata.creationTimestamp || iso(age !== undefined ? Date.now() - age * 1000 : t0 + 3600e3);
+      if (r.kind === 'Deployment' && Array.isArray(revisions) && revisions.length) {
+        // _revisions: earlier rollouts, oldest first ({ image } or { template } plus an optional
+        // change-cause). Each is rolled through the controller so `rollout history` and
+        // `rollout undo` have real revisions behind them; the seeded spec is the latest one.
+        const finalSpec = deepClone(r.spec), finalAnn = deepClone(r.metadata.annotations || {});
+        const withRevision = (rev) => {
+          const tpl = rev.template ? strategicMerge(deepClone(finalSpec.template), rev.template) : deepClone(finalSpec.template);
+          if (rev.image) tpl.spec.containers[0].image = rev.image;
+          return tpl;
+        };
+        r.spec.template = withRevision(revisions[0]);
+        r.metadata.annotations = Object.assign({}, finalAnn, revisions[0].cause ? { 'kubernetes.io/change-cause': revisions[0].cause } : {});
+        if (!revisions[0].cause) delete r.metadata.annotations['kubernetes.io/change-cause'];
+        const d = cluster.create(r, { sim });
+        Sim.reconcile(cluster);
+        const steps = revisions.slice(1).map(rev => ({ template: withRevision(rev), cause: rev.cause })).concat([{ template: finalSpec.template, cause: finalAnn['kubernetes.io/change-cause'] }]);
+        for (const step of steps) {
+          const next = deepClone(d);
+          next.spec.template = step.template;
+          next.metadata.annotations = Object.assign({}, next.metadata.annotations || {});
+          if (step.cause) next.metadata.annotations['kubernetes.io/change-cause'] = step.cause; else delete next.metadata.annotations['kubernetes.io/change-cause'];
+          Object.assign(d, cluster.update(next));
+          Sim.reconcile(cluster);
+        }
+        continue;
+      }
       cluster.create(r, { sim });
     }
 

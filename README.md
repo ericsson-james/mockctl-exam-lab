@@ -3,8 +3,8 @@
 **Live at [mockctl.com](https://mockctl.com/).** Source, issues and pull requests:
 [github.com/ericsson-james/mockctl-exam-lab](https://github.com/ericsson-james/mockctl-exam-lab).
 
-A free, browser-only practice environment modeled on the format of the CKA
-and CKS exams: a terminal on a base host, `kubectl` against simulated multi-node
+A free, browser-only practice environment modeled on the format of the CKA,
+CKAD and CKS exams: a terminal on a base host, `kubectl` against simulated multi-node
 clusters, `ssh` into control-plane and worker nodes for `etcdctl` / `kubeadm` /
 `systemctl` work, a question panel with weights and contexts, a two-hour
 clock, instant per-question checks with intended solutions and documentation
@@ -14,14 +14,15 @@ Everything is simulated in JavaScript. The page makes **no network calls**,
 has no server, no account, and no runtime dependencies.
 
 > **Not affiliated with The Linux Foundation or the CNCF.** This is an
-> independent, unofficial learning project. "Kubernetes", "CKA", "CKS",
-> "Certified Kubernetes Administrator" and "Certified Kubernetes Security
-> Specialist" are trademarks of The Linux Foundation
+> independent, unofficial learning project. "Kubernetes", "CKA", "CKAD", "CKS",
+> "Certified Kubernetes Administrator", "Certified Kubernetes Application
+> Developer" and "Certified Kubernetes Security Specialist" are trademarks of
+> The Linux Foundation
 > and are used here only to describe what the project helps you practice for.
 > Nothing in this repository is endorsed by, or reproduces, the official exam.
 >
-> **About exam content.** The maintainer has **not** taken the CKA, the CKS
-> or any other Linux Foundation exam. Every practice question here was written from
+> **About exam content.** The maintainer has **not** taken the CKA, the CKAD,
+> the CKS or any other Linux Foundation exam. Every practice question here was written from
 > the publicly published curriculum and the Kubernetes documentation, never
 > from a real exam. If the maintainer sits any of these exams in the future,
 > **this project will stop being updated** at that point, so that it can never
@@ -48,9 +49,10 @@ assets. Changes go to `beta.mockctl.com` first (`deploy:beta`, a separate
 Worker, marked "beta" in the header and excluded from search) and to
 `mockctl.com` only with `deploy`.
 
-Five practice exams ship in `exams/`: two CKA exams (18 and 17 questions,
-covering the full public curriculum between them) and three CKS exams
-(17 questions each, across all six CKS domains). At boot the terminal shows a numbered
+Six practice exams ship in `exams/`: two CKA exams (18 and 17 questions,
+covering the full public curriculum between them), one CKAD exam (18
+questions, weighted like the five domains of the public curriculum) and three
+CKS exams (17 questions each, across all six CKS domains). At boot the terminal shows a numbered
 menu: pick with the arrow keys and Enter, or type the number. A URL fragment
 such as `#2` (or an exam's name) skips the menu. `exam list` and `exam switch
 <number>` change exams later; `exam import <code>` adds an exam someone
@@ -105,6 +107,21 @@ output via `journalctl -u falco`, `sysctl` with persistent per-node kernel
 parameters, and `sha256sum`. NetworkPolicy `ipBlock` peers match pod IPs
 against the CIDR (with `except`).
 
+**Helm and Kustomize (CKAD)** — `helm repo add|list|update`, `search repo`,
+`show values`, `install`, `upgrade` (`--set`, `-f`, `--version`,
+`--create-namespace`), `list`, `status`, `history`, `rollback`, `uninstall`,
+`get values|manifest`, `template`. Charts come from a catalog in the exam spec
+and render through the same API-server path as `kubectl apply`, so releases
+produce real Deployments, Services and rollouts, carry Helm's ownership labels,
+and leave `sh.helm.release.v1.*` Secrets behind. `kubectl apply -k` /
+`delete -k` / `kubectl kustomize` build overlays with `resources`, `namespace`,
+`namePrefix`/`nameSuffix`, `commonLabels`/`labels`, `commonAnnotations`,
+`images`, `replicas`, `patches` (strategic merge and JSON 6902),
+`configMapGenerator`/`secretGenerator` with name hashes and reference
+rewriting. Manifests with a removed API version fail with kubectl's real
+"no matches for kind" error, and `kubectl create job --from=cronjob/NAME`
+works.
+
 **Exam** — the side panel shows each question with weight, domain and its
 `kubectl config use-context` line, a flag for review, **Check answer** for
 instant feedback, **Show solution** for the intended commands/YAML with links
@@ -128,7 +145,9 @@ Seeded resources are ordinary Kubernetes objects (JSON). Two extra keys are
 stripped before creation: `_sim` (per-object simulation state such as `cpu`,
 `memory`, `logs`, `crash`, `runSeconds`) and `_ageSeconds`. Per-node `hosts`
 overrides set up troubleshooting scenarios: stop a service, break a file,
-change packages.
+change packages. A seeded Deployment may carry `_revisions` (earlier pod
+templates, oldest first) so it starts with real rollout history for
+`rollout history` / `rollout undo` tasks.
 
 `text` and `solution` use a lightweight markdown (paragraphs, `code`, `- `
 lists, four-space-indented command blocks). `references` is a list of
@@ -141,7 +160,7 @@ Checks are declarative (`src/js/exam/checks.js`): `resource` (existence plus
 `clusterVersion`, `serviceEndpoints`, `pvcBound`, `canI`, `connectivity`
 (NetworkPolicy-aware), `hostFile`, `hostService`, `hostPackage`,
 `staticPodHealthy`, `apiHealthy`, `dsCoversNodes`, `nodeEmpty`,
-`hostApparmorLoaded`, `hostSysctl`, `podLogsContain`. Each check may carry a
+`hostApparmorLoaded`, `hostSysctl`, `podLogsContain`, `helmRelease`. Each check may carry a
 `hint` shown when it fails. Write checks against **state**, not against the
 exact command a learner typed.
 
@@ -150,7 +169,10 @@ exact command a learner typed.
 The exam type is metadata; what makes an exam is its world and its checks.
 Exam specs may also carry `trivy` (image -> finding counts) and `kubeBench`
 (CIS checks: id, text, host, file, contains/notContains, remediation) tables
-that the corresponding tools read. Seeded file contents may embed
+that the corresponding tools read, and `helm` (chart repositories keyed by
+URL, each chart with `versions`, `values`, `notes` and JSON `manifests` using
+`{{ .Release.Name }}` / `{{ .Values.x }}` placeholders; see
+`exams/ckad-practice-1.json` and the header of `src/js/commands/helm.js`). Seeded file contents may embed
 `{{sha256:text}}`, replaced when the world is built by the lab's SHA-256 of
 that text (for checksum-verification tasks), and `{{pem:LABEL:seed}}`, which
 expands to a synthetic PEM block so nothing key-shaped sits in the JSON.
@@ -173,7 +195,7 @@ src/js/
   k8s/world.js                  exam spec -> clusters, node hosts, manifests, kubeconfigs
   exam/checks.js|exam.js|ui.js  grading DSL, exam state/timer, side panel
   shell.js, terminal.js, vim.js the shell, screen/keyboard, the editor
-  commands/                     ls/cat/…, ssh/curl, systemctl/etcdctl/kubeadm/apt, exam
+  commands/                     ls/cat/…, ssh/curl, systemctl/etcdctl/kubeadm/apt, helm, exam
   app.js                        boot
 exams/                          exam definitions (JSON)
 static/                         copied into dist/ as-is: share image, favicon, 404 page, _headers
@@ -183,9 +205,11 @@ test/smoke.mjs                  headless end-to-end test
 
 ## Not simulated (yet)
 
-`kubectl port-forward`/`cp`/`attach`/`debug`, Helm, Kustomize, interactive
-shells inside containers (run single commands with `exec -- cmd`), Gateway
-API controllers (objects can be created and listed), `kubeadm init/join`.
+`kubectl port-forward`/`cp`/`attach`/`debug`, building container images
+(`docker`/`podman`), Helm charts from the internet or local chart directories
+(only the catalog in the exam spec), interactive shells inside containers (run
+single commands with `exec -- cmd`), Gateway API controllers (objects can be
+created and listed), `kubeadm init/join`.
 
 ## Attribution and license
 

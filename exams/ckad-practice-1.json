@@ -1,0 +1,1983 @@
+{
+  "uuid": "c0a80101-0000-4000-8000-0000000c4ad1",
+  "name": "Unofficial CKAD Practice Exam 1",
+  "exam": "CKAD",
+  "durationMinutes": 120,
+  "passPercent": 66,
+  "candidate": "candidate",
+  "clientVersion": "1.31.0",
+  "base": {
+    "hostname": "ckad-base",
+    "ip": "10.0.0.7",
+    "files": {
+      "/opt/answers/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/home/candidate/legacy/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/home/candidate/legacy/api-deploy.yaml": {
+        "content": "# Exported from an old cluster years ago. It no longer applies here.\napiVersion: extensions/v1beta1\nkind: Deployment\nmetadata:\n  name: legacy-api\n  namespace: shop\n  labels:\n    app: legacy-api\nspec:\n  replicas: 2\n  template:\n    metadata:\n      labels:\n        app: legacy-api\n    spec:\n      containers:\n      - name: api\n        image: nginx:1.27\n        ports:\n        - containerPort: 80\n",
+        "owner": "candidate",
+        "mode": "644"
+      },
+      "/home/candidate/config/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/home/candidate/config/app.properties": {
+        "content": "mode=production\nlog.level=info\ncache.ttl=300\n",
+        "owner": "candidate",
+        "mode": "644"
+      },
+      "/home/candidate/kustomize/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/home/candidate/kustomize/base/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/home/candidate/kustomize/base/kustomization.yaml": {
+        "content": "resources:\n- deployment.yaml\n- service.yaml\n",
+        "owner": "candidate",
+        "mode": "644"
+      },
+      "/home/candidate/kustomize/base/deployment.yaml": {
+        "content": "apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: catalog\n  labels:\n    app: catalog\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: catalog\n  template:\n    metadata:\n      labels:\n        app: catalog\n    spec:\n      containers:\n      - name: catalog\n        image: nginx:1.25\n        ports:\n        - containerPort: 80\n",
+        "owner": "candidate",
+        "mode": "644"
+      },
+      "/home/candidate/kustomize/base/service.yaml": {
+        "content": "apiVersion: v1\nkind: Service\nmetadata:\n  name: catalog\n  labels:\n    app: catalog\nspec:\n  selector:\n    app: catalog\n  ports:\n  - port: 80\n    targetPort: 80\n",
+        "owner": "candidate",
+        "mode": "644"
+      },
+      "/home/candidate/kustomize/overlays/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/home/candidate/kustomize/overlays/prod/": {
+        "dir": true,
+        "owner": "candidate",
+        "mode": "755"
+      },
+      "/home/candidate/kustomize/overlays/prod/kustomization.yaml": {
+        "content": "# prod overlay: finish this file (see the task)\nresources:\n- ../../base\n",
+        "owner": "candidate",
+        "mode": "644"
+      }
+    },
+    "homeFiles": {
+      "README.txt": "CKAD practice base host. Answer files go under /opt/answers/.\nTask files: ~/legacy (an old manifest), ~/kustomize (base + overlays), ~/config (properties file).\nhelm is installed; the chart repository for this lab is https://charts.mockctl.dev/stable\n"
+    }
+  },
+  "contexts": {
+    "ckad": {
+      "cluster": "ckad",
+      "namespace": "default"
+    }
+  },
+  "defaultContext": "ckad",
+  "helm": {
+    "added": {},
+    "repos": {
+      "https://charts.mockctl.dev/stable": {
+        "charts": {
+          "podinfo": {
+            "versions": [
+              "6.4.0",
+              "6.5.1"
+            ],
+            "appVersions": {
+              "6.4.0": "6.4.0",
+              "6.5.1": "6.5.1"
+            },
+            "description": "Podinfo Helm chart for Kubernetes",
+            "values": {
+              "replicaCount": 1,
+              "image": {
+                "repository": "stefanprodan/podinfo",
+                "tag": ""
+              },
+              "service": {
+                "type": "ClusterIP",
+                "port": 9898
+              },
+              "ingress": {
+                "enabled": false,
+                "host": "podinfo.local"
+              }
+            },
+            "notes": "1. Get the application URL by running:\n  kubectl -n {{ .Release.Namespace }} port-forward deploy/{{ .Release.Name }}-podinfo 8080:9898",
+            "manifests": [
+              {
+                "apiVersion": "v1",
+                "kind": "Service",
+                "metadata": {
+                  "name": "{{ .Release.Name }}-podinfo",
+                  "labels": {
+                    "app.kubernetes.io/name": "podinfo"
+                  }
+                },
+                "spec": {
+                  "type": "{{ .Values.service.type }}",
+                  "ports": [
+                    {
+                      "port": "{{ .Values.service.port }}",
+                      "targetPort": 9898,
+                      "protocol": "TCP",
+                      "name": "http"
+                    }
+                  ],
+                  "selector": {
+                    "app.kubernetes.io/name": "podinfo",
+                    "app.kubernetes.io/instance": "{{ .Release.Name }}"
+                  }
+                }
+              },
+              {
+                "apiVersion": "apps/v1",
+                "kind": "Deployment",
+                "metadata": {
+                  "name": "{{ .Release.Name }}-podinfo",
+                  "labels": {
+                    "app.kubernetes.io/name": "podinfo"
+                  }
+                },
+                "spec": {
+                  "replicas": "{{ .Values.replicaCount }}",
+                  "selector": {
+                    "matchLabels": {
+                      "app.kubernetes.io/name": "podinfo",
+                      "app.kubernetes.io/instance": "{{ .Release.Name }}"
+                    }
+                  },
+                  "template": {
+                    "metadata": {
+                      "labels": {
+                        "app.kubernetes.io/name": "podinfo",
+                        "app.kubernetes.io/instance": "{{ .Release.Name }}"
+                      }
+                    },
+                    "spec": {
+                      "containers": [
+                        {
+                          "name": "podinfo",
+                          "image": "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}",
+                          "ports": [
+                            {
+                              "name": "http",
+                              "containerPort": 9898,
+                              "protocol": "TCP"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              {
+                "_if": ".Values.ingress.enabled",
+                "apiVersion": "networking.k8s.io/v1",
+                "kind": "Ingress",
+                "metadata": {
+                  "name": "{{ .Release.Name }}-podinfo"
+                },
+                "spec": {
+                  "rules": [
+                    {
+                      "host": "{{ .Values.ingress.host }}",
+                      "http": {
+                        "paths": [
+                          {
+                            "path": "/",
+                            "pathType": "Prefix",
+                            "backend": {
+                              "service": {
+                                "name": "{{ .Release.Name }}-podinfo",
+                                "port": {
+                                  "number": "{{ .Values.service.port }}"
+                                }
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "clusters": {
+    "ckad": {
+      "version": "1.31.0",
+      "ageDays": 45,
+      "badImages": [
+        "nginx:1.99"
+      ],
+      "nodes": [
+        {
+          "name": "ckad-control",
+          "roles": [
+            "control-plane"
+          ],
+          "ip": "10.0.2.11"
+        },
+        {
+          "name": "ckad-node1",
+          "ip": "10.0.2.12"
+        },
+        {
+          "name": "ckad-node2",
+          "ip": "10.0.2.13"
+        }
+      ],
+      "resources": [
+        {
+          "apiVersion": "storage.k8s.io/v1",
+          "kind": "StorageClass",
+          "metadata": {
+            "name": "standard",
+            "annotations": {
+              "storageclass.kubernetes.io/is-default-class": "true"
+            }
+          },
+          "provisioner": "rancher.io/local-path",
+          "reclaimPolicy": "Delete",
+          "volumeBindingMode": "Immediate"
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "pipeline",
+            "labels": {
+              "kubernetes.io/metadata.name": "pipeline"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "batch",
+            "labels": {
+              "kubernetes.io/metadata.name": "batch"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "storage",
+            "labels": {
+              "kubernetes.io/metadata.name": "storage"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "shop",
+            "labels": {
+              "kubernetes.io/metadata.name": "shop"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "prod",
+            "labels": {
+              "kubernetes.io/metadata.name": "prod"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "debug",
+            "labels": {
+              "kubernetes.io/metadata.name": "debug"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "data",
+            "labels": {
+              "kubernetes.io/metadata.name": "data"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "config",
+            "labels": {
+              "kubernetes.io/metadata.name": "config"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "limited",
+            "labels": {
+              "kubernetes.io/metadata.name": "limited"
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Namespace",
+          "metadata": {
+            "name": "secure",
+            "labels": {
+              "kubernetes.io/metadata.name": "secure"
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "api",
+            "namespace": "shop",
+            "labels": {
+              "app": "api"
+            }
+          },
+          "spec": {
+            "replicas": 4,
+            "selector": {
+              "matchLabels": {
+                "app": "api"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "api"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "api",
+                    "image": "nginx:1.25",
+                    "resources": {},
+                    "ports": [
+                      {
+                        "containerPort": 80,
+                        "protocol": "TCP"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "orders",
+            "namespace": "shop",
+            "labels": {
+              "app": "orders"
+            },
+            "annotations": {
+              "kubernetes.io/change-cause": "bump orders to nginx:1.99"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "orders"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "orders"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "orders",
+                    "image": "nginx:1.99",
+                    "resources": {},
+                    "ports": [
+                      {
+                        "containerPort": 80,
+                        "protocol": "TCP"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "_revisions": [
+            {
+              "image": "nginx:1.25",
+              "cause": "initial release of orders"
+            }
+          ]
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "web-stable",
+            "namespace": "shop",
+            "labels": {
+              "app": "web",
+              "track": "stable"
+            }
+          },
+          "spec": {
+            "replicas": 3,
+            "selector": {
+              "matchLabels": {
+                "app": "web",
+                "track": "stable"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "web",
+                  "track": "stable"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "web",
+                    "image": "nginx:1.25",
+                    "resources": {},
+                    "ports": [
+                      {
+                        "containerPort": 80,
+                        "protocol": "TCP"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "web",
+            "namespace": "shop",
+            "labels": {
+              "app": "web"
+            }
+          },
+          "spec": {
+            "selector": {
+              "app": "web"
+            },
+            "ports": [
+              {
+                "port": 80,
+                "targetPort": 80,
+                "protocol": "TCP"
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "payments",
+            "namespace": "shop",
+            "labels": {
+              "app": "payments"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "payments"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "payments"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "payments",
+                    "image": "nginx:1.27",
+                    "resources": {},
+                    "ports": [
+                      {
+                        "containerPort": 80,
+                        "protocol": "TCP"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "cart",
+            "namespace": "shop",
+            "labels": {
+              "app": "cart",
+              "tier": "backend"
+            }
+          },
+          "spec": {
+            "replicas": 2,
+            "selector": {
+              "matchLabels": {
+                "app": "cart",
+                "tier": "backend"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "cart",
+                  "tier": "backend"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "cart",
+                    "image": "nginx:1.27",
+                    "resources": {},
+                    "ports": [
+                      {
+                        "containerPort": 8080,
+                        "protocol": "TCP"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Service",
+          "metadata": {
+            "name": "cart",
+            "namespace": "shop",
+            "labels": {
+              "app": "cart"
+            }
+          },
+          "spec": {
+            "selector": {
+              "app": "carts"
+            },
+            "ports": [
+              {
+                "port": 80,
+                "targetPort": 8080,
+                "protocol": "TCP"
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "apps/v1",
+          "kind": "Deployment",
+          "metadata": {
+            "name": "db",
+            "namespace": "shop",
+            "labels": {
+              "app": "db"
+            }
+          },
+          "spec": {
+            "replicas": 1,
+            "selector": {
+              "matchLabels": {
+                "app": "db"
+              }
+            },
+            "template": {
+              "metadata": {
+                "labels": {
+                  "app": "db"
+                }
+              },
+              "spec": {
+                "containers": [
+                  {
+                    "name": "db",
+                    "image": "postgres:16",
+                    "resources": {},
+                    "ports": [
+                      {
+                        "containerPort": 5432,
+                        "protocol": "TCP"
+                      }
+                    ],
+                    "env": [
+                      {
+                        "name": "POSTGRES_PASSWORD",
+                        "value": "lab-only"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "ConfigMap",
+          "metadata": {
+            "name": "inventory-config",
+            "namespace": "debug"
+          },
+          "data": {
+            "DB_HOST": "db.shop.svc.cluster.local",
+            "DB_PORT": "5432"
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "Pod",
+          "metadata": {
+            "name": "inventory",
+            "namespace": "debug",
+            "labels": {
+              "app": "inventory"
+            }
+          },
+          "spec": {
+            "containers": [
+              {
+                "name": "inventory",
+                "image": "busybox:1.36",
+                "command": [
+                  "sh",
+                  "-c",
+                  "echo \"starting inventory service\"; [ -n \"$DB_HOST\" ] || { echo \"ERROR: DB_HOST is not set\"; exit 1; }; sleep 3600"
+                ]
+              }
+            ],
+            "restartPolicy": "Always"
+          },
+          "_sim": {
+            "crash": true,
+            "crashLogs": [
+              "starting inventory service",
+              "ERROR: DB_HOST is not set"
+            ]
+          },
+          "_ageSeconds": 1800
+        },
+        {
+          "apiVersion": "apiextensions.k8s.io/v1",
+          "kind": "CustomResourceDefinition",
+          "metadata": {
+            "name": "backups.data.mockctl.io"
+          },
+          "spec": {
+            "group": "data.mockctl.io",
+            "scope": "Namespaced",
+            "names": {
+              "plural": "backups",
+              "singular": "backup",
+              "kind": "Backup",
+              "shortNames": [
+                "bk"
+              ]
+            },
+            "versions": [
+              {
+                "name": "v1",
+                "served": true,
+                "storage": true,
+                "schema": {
+                  "openAPIV3Schema": {
+                    "type": "object",
+                    "properties": {
+                      "spec": {
+                        "type": "object",
+                        "properties": {
+                          "source": {
+                            "type": "string"
+                          },
+                          "schedule": {
+                            "type": "string"
+                          },
+                          "retentionDays": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion": "v1",
+          "kind": "ResourceQuota",
+          "metadata": {
+            "name": "compute-quota",
+            "namespace": "limited"
+          },
+          "spec": {
+            "hard": {
+              "requests.cpu": "1",
+              "requests.memory": "1Gi",
+              "limits.cpu": "2",
+              "limits.memory": "2Gi",
+              "pods": "4"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "questions": [
+    {
+      "title": "Sidecar container with a shared volume",
+      "domain": "Application Design and Build",
+      "weight": 6,
+      "context": "ckad",
+      "text": "In namespace `pipeline` create a Pod named `logger` with two containers that share an `emptyDir` volume named `logs` mounted at `/var/log/app` in both:\n\n- container `app`, image `busybox:1.36`, command `sh -c \"while true; do date >> /var/log/app/app.log; sleep 5; done\"`\n- container `log-shipper`, image `busybox:1.36`, command `sh -c \"tail -F /var/log/app/app.log\"`\n\nBoth containers must be running.",
+      "solution": "    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: logger\n      namespace: pipeline\n    spec:\n      volumes:\n      - name: logs\n        emptyDir: {}\n      containers:\n      - name: app\n        image: busybox:1.36\n        command: [\"sh\", \"-c\", \"while true; do date >> /var/log/app/app.log; sleep 5; done\"]\n        volumeMounts:\n        - name: logs\n          mountPath: /var/log/app\n      - name: log-shipper\n        image: busybox:1.36\n        command: [\"sh\", \"-c\", \"tail -F /var/log/app/app.log\"]\n        volumeMounts:\n        - name: logs\n          mountPath: /var/log/app\n\nStart from `kubectl -n pipeline run logger --image=busybox:1.36 $do -- sh -c ... > logger.yaml`, add the second container and the volume, then `kubectl apply -f logger.yaml`. Check with `kubectl -n pipeline get pod logger` (READY 2/2) and `kubectl -n pipeline logs logger -c log-shipper`.",
+      "references": [
+        {
+          "title": "Sidecar Containers",
+          "url": "https://kubernetes.io/docs/concepts/workloads/pods/sidecar-containers/"
+        },
+        {
+          "title": "Communicate Between Containers in the Same Pod Using a Shared Volume",
+          "url": "https://kubernetes.io/docs/tasks/access-application-cluster/communicate-containers-same-pod-shared-volume/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "pipeline",
+          "name": "logger",
+          "hint": "pod logger in pipeline must have containers app and log-shipper (busybox:1.36)",
+          "assert": {
+            "spec.containers": {
+              "length": 2
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "pipeline",
+          "name": "logger",
+          "hint": "container app must use busybox:1.36",
+          "assert": {
+            "spec.containers": {
+              "anyMatch": {
+                "name": "app",
+                "image": "busybox:1.36"
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "pipeline",
+          "name": "logger",
+          "hint": "container log-shipper must use busybox:1.36",
+          "assert": {
+            "spec.containers": {
+              "anyMatch": {
+                "name": "log-shipper",
+                "image": "busybox:1.36"
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "pipeline",
+          "name": "logger",
+          "hint": "both containers must mount the emptyDir volume logs at /var/log/app",
+          "assert": {
+            "spec.volumes": {
+              "anyMatch": {
+                "name": "logs",
+                "emptyDir": {
+                  "exists": true
+                }
+              }
+            },
+            "spec.containers[0].volumeMounts": {
+              "anyMatch": {
+                "name": "logs",
+                "mountPath": "/var/log/app"
+              }
+            },
+            "spec.containers[1].volumeMounts": {
+              "anyMatch": {
+                "name": "logs",
+                "mountPath": "/var/log/app"
+              }
+            }
+          }
+        },
+        {
+          "type": "podsReady",
+          "cluster": "ckad",
+          "namespace": "pipeline",
+          "name": "logger",
+          "hint": "pod logger must be Running with 2/2 containers ready"
+        }
+      ]
+    },
+    {
+      "title": "CronJob and a manual run",
+      "domain": "Application Design and Build",
+      "weight": 5,
+      "context": "ckad",
+      "text": "In namespace `batch`:\n\n1. Create a CronJob `cleanup` that runs every 10 minutes (`*/10 * * * *`) with image `busybox:1.36` and command `sh -c \"echo cleaning; sleep 5\"`. It must never run two jobs at once (`concurrencyPolicy: Forbid`), keep 2 successful and 1 failed job in history.\n2. Trigger it once by hand: create a Job named `cleanup-manual` from the CronJob and make sure it completes.",
+      "solution": "    kubectl -n batch create cronjob cleanup --image=busybox:1.36 --schedule=\"*/10 * * * *\" $do -- sh -c \"echo cleaning; sleep 5\" > cleanup.yaml\n    vim cleanup.yaml     # add under spec: concurrencyPolicy: Forbid, successfulJobsHistoryLimit: 2, failedJobsHistoryLimit: 1\n    kubectl apply -f cleanup.yaml\n    kubectl -n batch create job cleanup-manual --from=cronjob/cleanup\n    kubectl -n batch get job cleanup-manual -w\n\nThe three history and concurrency fields sit directly under `spec` of the CronJob, next to `schedule`, not inside `jobTemplate`.",
+      "references": [
+        {
+          "title": "CronJob",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/"
+        },
+        {
+          "title": "Running Automated Tasks with a CronJob",
+          "url": "https://kubernetes.io/docs/tasks/job/automated-tasks-with-cron-jobs/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "cronjob",
+          "namespace": "batch",
+          "name": "cleanup",
+          "hint": "cronjob cleanup: schedule */10 * * * *, image busybox:1.36",
+          "assert": {
+            "spec.schedule": "*/10 * * * *",
+            "spec.jobTemplate.spec.template.spec.containers[0].image": "busybox:1.36"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "cronjob",
+          "namespace": "batch",
+          "name": "cleanup",
+          "hint": "cronjob cleanup must set concurrencyPolicy Forbid, successfulJobsHistoryLimit 2, failedJobsHistoryLimit 1",
+          "assert": {
+            "spec.concurrencyPolicy": "Forbid",
+            "spec.successfulJobsHistoryLimit": 2,
+            "spec.failedJobsHistoryLimit": 1
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "job",
+          "namespace": "batch",
+          "name": "cleanup-manual",
+          "hint": "job cleanup-manual must be created from the cronjob (kubectl create job --from=cronjob/cleanup) and complete",
+          "assert": {
+            "metadata.annotations.cronjob\\.kubernetes\\.io/instantiate": "manual",
+            "status.succeeded": {
+              "gte": 1
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "Persistent volume claim with an init container",
+      "domain": "Application Design and Build",
+      "weight": 5,
+      "context": "ckad",
+      "text": "In namespace `storage`:\n\n- create a PersistentVolumeClaim `data-pvc` requesting `1Gi`, access mode `ReadWriteOnce`, storage class `standard` (it provisions dynamically)\n- create a Pod `web-data` with an init container `init-html` (image `busybox:1.36`, command `sh -c \"echo Hello from init > /work/index.html\"`) that mounts the claim at `/work`, and a container `web` (image `nginx:1.27`) that mounts the same claim at `/usr/share/nginx/html`\n\nThe claim must be Bound and the pod Running.",
+      "solution": "    apiVersion: v1\n    kind: PersistentVolumeClaim\n    metadata:\n      name: data-pvc\n      namespace: storage\n    spec:\n      accessModes: [\"ReadWriteOnce\"]\n      storageClassName: standard\n      resources:\n        requests:\n          storage: 1Gi\n    ---\n    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: web-data\n      namespace: storage\n    spec:\n      volumes:\n      - name: data\n        persistentVolumeClaim:\n          claimName: data-pvc\n      initContainers:\n      - name: init-html\n        image: busybox:1.36\n        command: [\"sh\", \"-c\", \"echo Hello from init > /work/index.html\"]\n        volumeMounts:\n        - name: data\n          mountPath: /work\n      containers:\n      - name: web\n        image: nginx:1.27\n        volumeMounts:\n        - name: data\n          mountPath: /usr/share/nginx/html\n\n`kubectl -n storage get pvc,pod` should show the claim Bound and the pod Running once the init container has finished.",
+      "references": [
+        {
+          "title": "Configure a Pod to Use a PersistentVolume for Storage",
+          "url": "https://kubernetes.io/docs/tutorials/configuration/configure-persistent-volume-storage/"
+        },
+        {
+          "title": "Init Containers",
+          "url": "https://kubernetes.io/docs/concepts/workloads/pods/init-containers/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pvc",
+          "namespace": "storage",
+          "name": "data-pvc",
+          "hint": "pvc data-pvc: 1Gi, ReadWriteOnce, storageClassName standard",
+          "assert": {
+            "spec.resources.requests.storage": "1Gi",
+            "spec.accessModes": {
+              "contains": "ReadWriteOnce"
+            },
+            "spec.storageClassName": "standard"
+          }
+        },
+        {
+          "type": "pvcBound",
+          "cluster": "ckad",
+          "namespace": "storage",
+          "name": "data-pvc",
+          "hint": "pvc data-pvc must be Bound"
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "storage",
+          "name": "web-data",
+          "hint": "pod web-data needs init container init-html (busybox:1.36) mounting the claim at /work",
+          "assert": {
+            "spec.initContainers": {
+              "anyMatch": {
+                "name": "init-html",
+                "image": "busybox:1.36",
+                "volumeMounts": {
+                  "anyMatch": {
+                    "mountPath": "/work"
+                  }
+                }
+              }
+            },
+            "spec.volumes": {
+              "anyMatch": {
+                "persistentVolumeClaim.claimName": "data-pvc"
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "storage",
+          "name": "web-data",
+          "hint": "container web (nginx:1.27) must mount the claim at /usr/share/nginx/html",
+          "assert": {
+            "spec.containers": {
+              "anyMatch": {
+                "name": "web",
+                "image": "nginx:1.27",
+                "volumeMounts": {
+                  "anyMatch": {
+                    "mountPath": "/usr/share/nginx/html"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "podsReady",
+          "cluster": "ckad",
+          "namespace": "storage",
+          "name": "web-data",
+          "hint": "pod web-data must be Running"
+        }
+      ]
+    },
+    {
+      "title": "Parallel Job",
+      "domain": "Application Design and Build",
+      "weight": 4,
+      "context": "ckad",
+      "text": "In namespace `batch` create a Job `image-resize` (image `busybox:1.36`, command `sh -c \"echo resizing; sleep 3\"`) that runs **4 completions**, at most **2 in parallel**, gives up after **3** retries (`backoffLimit`) and never restarts its containers.\n\nWait until it shows 4/4 completions.",
+      "solution": "    kubectl -n batch create job image-resize --image=busybox:1.36 $do -- sh -c \"echo resizing; sleep 3\" > job.yaml\n    vim job.yaml      # under spec: completions: 4, parallelism: 2, backoffLimit: 3 (restartPolicy Never is already there)\n    kubectl apply -f job.yaml\n    kubectl -n batch get job image-resize -w\n\n`completions`, `parallelism` and `backoffLimit` are Job fields (directly under `spec`); `restartPolicy` lives in the pod template.",
+      "references": [
+        {
+          "title": "Jobs",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/"
+        },
+        {
+          "title": "Parallel Jobs",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/job/#parallel-jobs"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "job",
+          "namespace": "batch",
+          "name": "image-resize",
+          "hint": "job image-resize: completions 4, parallelism 2, backoffLimit 3, image busybox:1.36, restartPolicy Never",
+          "assert": {
+            "spec.completions": 4,
+            "spec.parallelism": 2,
+            "spec.backoffLimit": 3,
+            "spec.template.spec.containers[0].image": "busybox:1.36",
+            "spec.template.spec.restartPolicy": "Never"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "job",
+          "namespace": "batch",
+          "name": "image-resize",
+          "hint": "the job must reach 4 successful completions (give it a few seconds)",
+          "assert": {
+            "status.succeeded": 4
+          }
+        }
+      ]
+    },
+    {
+      "title": "Rolling update and rollback",
+      "domain": "Application Deployment",
+      "weight": 7,
+      "context": "ckad",
+      "text": "Two Deployments in namespace `shop` need attention.\n\n1. `api` must roll out image `nginx:1.27` without ever going below 4 available pods: set its strategy to RollingUpdate with `maxSurge: 1` and `maxUnavailable: 0`, then update the image. Record `upgrade api to nginx:1.27` as the change cause.\n2. `orders` was just updated to `nginx:1.99`, which does not exist, and its rollout is stuck. Roll it back to the previous revision so it becomes available again.",
+      "solution": "    kubectl -n shop patch deployment api -p '{\"spec\":{\"strategy\":{\"type\":\"RollingUpdate\",\"rollingUpdate\":{\"maxSurge\":1,\"maxUnavailable\":0}}}}'\n    kubectl -n shop set image deployment/api api=nginx:1.27\n    kubectl -n shop annotate deployment api kubernetes.io/change-cause=\"upgrade api to nginx:1.27\" --overwrite\n    kubectl -n shop rollout status deployment api\n\n    kubectl -n shop rollout history deployment orders\n    kubectl -n shop rollout undo deployment orders\n    kubectl -n shop rollout status deployment orders\n\n`kubectl edit deployment api` works for the strategy too. `rollout undo` goes back one revision by default; `--to-revision=N` picks a specific one from `rollout history`.",
+      "references": [
+        {
+          "title": "Deployments: rolling update",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment"
+        },
+        {
+          "title": "Deployments: rolling back",
+          "url": "https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-back-a-deployment"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "shop",
+          "name": "api",
+          "hint": "deployment api must use RollingUpdate with maxSurge 1 and maxUnavailable 0",
+          "assert": {
+            "spec.strategy.rollingUpdate.maxSurge": 1,
+            "spec.strategy.rollingUpdate.maxUnavailable": 0
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "shop",
+          "name": "api",
+          "hint": "deployment api must run nginx:1.27 with change-cause \"upgrade api to nginx:1.27\"",
+          "assert": {
+            "spec.template.spec.containers[0].image": "nginx:1.27",
+            "metadata.annotations.kubernetes\\.io/change-cause": "upgrade api to nginx:1.27"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "ckad",
+          "namespace": "shop",
+          "name": "api",
+          "replicas": 4,
+          "hint": "deployment api must have 4 available replicas"
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "shop",
+          "name": "orders",
+          "hint": "deployment orders must be rolled back to nginx:1.25 (kubectl rollout undo)",
+          "assert": {
+            "spec.template.spec.containers[0].image": "nginx:1.25"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "ckad",
+          "namespace": "shop",
+          "name": "orders",
+          "hint": "deployment orders must be available again"
+        }
+      ]
+    },
+    {
+      "title": "Canary deployment",
+      "domain": "Application Deployment",
+      "weight": 4,
+      "context": "ckad",
+      "text": "In namespace `shop`, Service `web` selects `app=web` and currently sends all traffic to Deployment `web-stable` (3 replicas, `nginx:1.25`).\n\nAdd a canary: create Deployment `web-canary` with **1** replica of `nginx:1.27` whose pods carry the labels `app=web` and `track=canary`, so roughly a quarter of the Service traffic reaches the new version. Do not change `web-stable` or the Service.",
+      "solution": "    kubectl -n shop create deployment web-canary --image=nginx:1.27 --replicas=1 $do > canary.yaml\n    vim canary.yaml    # labels app: web, track: canary on the pod template (and matching selector)\n    kubectl apply -f canary.yaml\n    kubectl -n shop get endpoints web    # 4 addresses: 3 stable + 1 canary\n\nThe Service does not know about Deployments, only labels: any pod with `app=web` is an endpoint. The `track` label is what lets you tell (and later scale or delete) the canary separately.",
+      "references": [
+        {
+          "title": "Canary deployments",
+          "url": "https://kubernetes.io/docs/concepts/workloads/management/#canary-deployments"
+        },
+        {
+          "title": "Service",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/service/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "shop",
+          "name": "web-canary",
+          "hint": "deployment web-canary: 1 replica of nginx:1.27, pod labels app=web and track=canary",
+          "assert": {
+            "spec.replicas": 1,
+            "spec.template.spec.containers[0].image": "nginx:1.27",
+            "spec.template.metadata.labels.app": "web",
+            "spec.template.metadata.labels.track": "canary"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "shop",
+          "name": "web-stable",
+          "hint": "web-stable must keep 3 replicas of nginx:1.25",
+          "assert": {
+            "spec.replicas": 3,
+            "spec.template.spec.containers[0].image": "nginx:1.25"
+          }
+        },
+        {
+          "type": "serviceEndpoints",
+          "cluster": "ckad",
+          "namespace": "shop",
+          "name": "web",
+          "min": 4,
+          "hint": "service web must have 4 endpoints (3 stable + 1 canary)"
+        }
+      ]
+    },
+    {
+      "title": "Install and upgrade a Helm chart",
+      "domain": "Application Deployment",
+      "weight": 5,
+      "context": "ckad",
+      "text": "A chart repository for this lab is published at `https://charts.mockctl.dev/stable`.\n\n1. Add it as repository `stable`.\n2. Install chart `stable/podinfo` at chart version **6.4.0** as release `frontend` in namespace `helm-apps` (create the namespace) with **2** replicas (`replicaCount`).\n3. Upgrade the release to chart version **6.5.1**, keeping 2 replicas.\n\nThe release must end up deployed at 6.5.1 with its Deployment available.",
+      "solution": "    helm repo add stable https://charts.mockctl.dev/stable\n    helm search repo podinfo --versions\n    helm install frontend stable/podinfo -n helm-apps --create-namespace --version 6.4.0 --set replicaCount=2\n    helm upgrade frontend stable/podinfo -n helm-apps --version 6.5.1 --set replicaCount=2\n    helm list -n helm-apps\n    kubectl -n helm-apps get deploy\n\n`--set` values are not carried over between upgrades unless you pass `--reuse-values`, so repeat `--set replicaCount=2` (or use a values file with `-f`). `helm history frontend -n helm-apps` shows both revisions.",
+      "references": [
+        {
+          "title": "Using Helm",
+          "url": "https://helm.sh/docs/intro/using_helm/"
+        },
+        {
+          "title": "helm upgrade",
+          "url": "https://helm.sh/docs/helm/helm_upgrade/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "helmRelease",
+          "cluster": "ckad",
+          "namespace": "helm-apps",
+          "name": "frontend",
+          "chart": "podinfo",
+          "version": "6.5.1",
+          "minRevision": 2,
+          "values": {
+            "replicaCount": 2
+          },
+          "hint": "helm release frontend in helm-apps must be at chart podinfo 6.5.1 (revision 2+) with replicaCount 2"
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "ckad",
+          "namespace": "helm-apps",
+          "name": "frontend-podinfo",
+          "replicas": 2,
+          "hint": "deployment frontend-podinfo must have 2 available replicas"
+        }
+      ]
+    },
+    {
+      "title": "Kustomize overlay",
+      "domain": "Application Deployment",
+      "weight": 4,
+      "context": "ckad",
+      "text": "`~/kustomize/base` holds a Deployment `catalog` (`nginx:1.25`, 1 replica) and its Service. The overlay `~/kustomize/overlays/prod/kustomization.yaml` only references the base so far.\n\nComplete the overlay so that applying it creates the resources in namespace `prod` with the name prefix `prod-`, the label `env=prod` on every resource (including selectors), image `nginx:1.27`, and **3** replicas. Apply it with `kubectl apply -k`.",
+      "solution": "    # ~/kustomize/overlays/prod/kustomization.yaml\n    resources:\n    - ../../base\n    namespace: prod\n    namePrefix: prod-\n    commonLabels:\n      env: prod\n    images:\n    - name: nginx\n      newTag: \"1.27\"\n    replicas:\n    - name: catalog\n      count: 3\n\n    kubectl kustomize ~/kustomize/overlays/prod     # preview\n    kubectl apply -k ~/kustomize/overlays/prod\n    kubectl -n prod get deploy,svc -l env=prod\n\n`replicas` and `images` refer to the names as they appear in the base, before the prefix is added.",
+      "references": [
+        {
+          "title": "Declarative Management of Kubernetes Objects Using Kustomize",
+          "url": "https://kubernetes.io/docs/tasks/manage-kubernetes-objects/kustomization/"
+        },
+        {
+          "title": "The Kustomization File",
+          "url": "https://kubectl.docs.kubernetes.io/references/kustomize/kustomization/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "prod",
+          "name": "prod-catalog",
+          "hint": "deployment prod-catalog in prod: 3 replicas, nginx:1.27, label env=prod in metadata and selector",
+          "assert": {
+            "spec.replicas": 3,
+            "spec.template.spec.containers[0].image": "nginx:1.27",
+            "metadata.labels.env": "prod",
+            "spec.selector.matchLabels.env": "prod",
+            "spec.template.metadata.labels.env": "prod"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "svc",
+          "namespace": "prod",
+          "name": "prod-catalog",
+          "hint": "service prod-catalog in prod must exist with label env=prod and select env=prod",
+          "assert": {
+            "metadata.labels.env": "prod",
+            "spec.selector.env": "prod"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "ckad",
+          "namespace": "prod",
+          "name": "prod-catalog",
+          "replicas": 3,
+          "hint": "deployment prod-catalog must have 3 available replicas"
+        }
+      ]
+    },
+    {
+      "title": "Readiness and liveness probes",
+      "domain": "Application Observability and Maintenance",
+      "weight": 5,
+      "context": "ckad",
+      "text": "Deployment `payments` in namespace `shop` has no health checks. Add to its container:\n\n- a **readiness** probe: HTTP GET on path `/` port `80`, initial delay 5s, period 10s\n- a **liveness** probe: TCP socket on port `80`, initial delay 15s, period 20s\n\nThe Deployment must stay available afterwards.",
+      "solution": "    kubectl -n shop edit deployment payments\n\n    # inside the container:\n        readinessProbe:\n          httpGet:\n            path: /\n            port: 80\n          initialDelaySeconds: 5\n          periodSeconds: 10\n        livenessProbe:\n          tcpSocket:\n            port: 80\n          initialDelaySeconds: 15\n          periodSeconds: 20\n\n    kubectl -n shop rollout status deployment payments\n\nReadiness gates traffic (the pod leaves Service endpoints while failing); liveness restarts the container. Both belong at the container level, beside `image`.",
+      "references": [
+        {
+          "title": "Configure Liveness, Readiness and Startup Probes",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "shop",
+          "name": "payments",
+          "hint": "readinessProbe: httpGet / on port 80, initialDelaySeconds 5, periodSeconds 10",
+          "assert": {
+            "spec.template.spec.containers[0].readinessProbe.httpGet.path": "/",
+            "spec.template.spec.containers[0].readinessProbe.httpGet.port": 80,
+            "spec.template.spec.containers[0].readinessProbe.initialDelaySeconds": 5,
+            "spec.template.spec.containers[0].readinessProbe.periodSeconds": 10
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "shop",
+          "name": "payments",
+          "hint": "livenessProbe: tcpSocket port 80, initialDelaySeconds 15, periodSeconds 20",
+          "assert": {
+            "spec.template.spec.containers[0].livenessProbe.tcpSocket.port": 80,
+            "spec.template.spec.containers[0].livenessProbe.initialDelaySeconds": 15,
+            "spec.template.spec.containers[0].livenessProbe.periodSeconds": 20
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "ckad",
+          "namespace": "shop",
+          "name": "payments",
+          "hint": "deployment payments must stay available"
+        }
+      ]
+    },
+    {
+      "title": "Debug a crashing pod",
+      "domain": "Application Observability and Maintenance",
+      "weight": 5,
+      "context": "ckad",
+      "text": "Pod `inventory` in namespace `debug` keeps crashing.\n\n1. Find out why from its logs and save the line that starts with `ERROR` to `/opt/answers/inventory-error.txt` on the base host.\n2. Fix it: the container expects the environment variable `DB_HOST`, whose value is in ConfigMap `inventory-config` (key `DB_HOST`). Pods are immutable in that field, so recreate the pod with the same name, image and command plus the variable taken from the ConfigMap.\n\nThe pod must be Running.",
+      "solution": "    kubectl -n debug get pod inventory\n    kubectl -n debug logs inventory              # or: logs -p for the previous attempt\n    kubectl -n debug logs inventory | grep ERROR > /opt/answers/inventory-error.txt\n    kubectl -n debug get pod inventory -o yaml > inventory.yaml\n    vim inventory.yaml   # strip status/uid/resourceVersion..., add:\n        env:\n        - name: DB_HOST\n          valueFrom:\n            configMapKeyRef:\n              name: inventory-config\n              key: DB_HOST\n    kubectl -n debug delete pod inventory\n    kubectl -n debug apply -f inventory.yaml\n\n`kubectl describe pod` shows the restart count and last state; `logs -p` shows the output of the previous, crashed container.",
+      "references": [
+        {
+          "title": "Debug Running Pods",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/"
+        },
+        {
+          "title": "Define container environment variables using ConfigMap data",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/#define-container-environment-variables-using-configmap-data"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "ckad-base",
+          "path": "/opt/answers/inventory-error.txt",
+          "contains": "ERROR: DB_HOST is not set",
+          "hint": "/opt/answers/inventory-error.txt must contain the ERROR line from the pod logs"
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "debug",
+          "name": "inventory",
+          "hint": "pod inventory must take DB_HOST from configmap inventory-config key DB_HOST",
+          "assert": {
+            "spec.containers[0].image": "busybox:1.36",
+            "spec.containers[0].env": {
+              "anyMatch": {
+                "name": "DB_HOST",
+                "valueFrom.configMapKeyRef.name": "inventory-config",
+                "valueFrom.configMapKeyRef.key": "DB_HOST"
+              }
+            }
+          }
+        },
+        {
+          "type": "podsReady",
+          "cluster": "ckad",
+          "namespace": "debug",
+          "name": "inventory",
+          "hint": "pod inventory must be Running (recreate it, pods cannot be edited into a new env)"
+        }
+      ]
+    },
+    {
+      "title": "Fix a manifest that uses a removed API",
+      "domain": "Application Observability and Maintenance",
+      "weight": 5,
+      "context": "ckad",
+      "text": "`~/legacy/api-deploy.yaml` on the base host was exported from an old cluster and no longer applies here.\n\nUpdate it to an API version this cluster serves (see `kubectl api-resources`), add whatever the newer version requires, and apply it. Write the API version you used (for example `group/version`) to `/opt/answers/legacy-api-version.txt`.\n\nThe Deployment `legacy-api` in namespace `shop` must become available.",
+      "solution": "    kubectl apply -f ~/legacy/api-deploy.yaml     # error: no matches for kind \"Deployment\" in version \"extensions/v1beta1\"\n    kubectl api-resources | grep deployments      # apps/v1\n    vim ~/legacy/api-deploy.yaml\n      apiVersion: apps/v1\n      ...\n      spec:\n        selector:\n          matchLabels:\n            app: legacy-api\n    kubectl apply -f ~/legacy/api-deploy.yaml\n    echo apps/v1 > /opt/answers/legacy-api-version.txt\n\nDeployments moved to `apps/v1` in 1.16; the old `extensions/v1beta1` version defaulted the selector, `apps/v1` requires `spec.selector` and it must match the template labels. `kubectl explain deployment.spec.selector` confirms the field.",
+      "references": [
+        {
+          "title": "Deprecated API Migration Guide",
+          "url": "https://kubernetes.io/docs/reference/using-api/deprecation-guide/"
+        },
+        {
+          "title": "Kubernetes API deprecation policy",
+          "url": "https://kubernetes.io/docs/reference/using-api/deprecation-policy/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "shop",
+          "name": "legacy-api",
+          "hint": "deployment legacy-api must be applied as apps/v1 with selector app=legacy-api and 2 replicas of nginx:1.27",
+          "assert": {
+            "apiVersion": "apps/v1",
+            "spec.selector.matchLabels.app": "legacy-api",
+            "spec.replicas": 2,
+            "spec.template.spec.containers[0].image": "nginx:1.27"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "ckad",
+          "namespace": "shop",
+          "name": "legacy-api",
+          "hint": "deployment legacy-api must be available"
+        },
+        {
+          "type": "hostFile",
+          "host": "ckad-base",
+          "path": "/opt/answers/legacy-api-version.txt",
+          "equals": "apps/v1",
+          "hint": "/opt/answers/legacy-api-version.txt must contain apps/v1"
+        }
+      ]
+    },
+    {
+      "title": "Use a custom resource",
+      "domain": "Application Environment, Configuration and Security",
+      "weight": 5,
+      "context": "ckad",
+      "text": "An operator installed a CustomResourceDefinition for backups on this cluster (API group `data.mockctl.io`).\n\n1. Find the resource and write its **short name** to `/opt/answers/backup-shortname.txt`.\n2. In namespace `data` create a `Backup` named `nightly` with `spec.source: pvc/data-pvc`, `spec.schedule: \"0 2 * * *\"` and `spec.retentionDays: 7`.",
+      "solution": "    kubectl api-resources | grep data.mockctl.io\n    kubectl get crd backups.data.mockctl.io -o jsonpath='{.spec.names.shortNames[0]}'\n    echo bk > /opt/answers/backup-shortname.txt\n    kubectl explain backup.spec\n\n    apiVersion: data.mockctl.io/v1\n    kind: Backup\n    metadata:\n      name: nightly\n      namespace: data\n    spec:\n      source: pvc/data-pvc\n      schedule: \"0 2 * * *\"\n      retentionDays: 7\n\n    kubectl apply -f backup.yaml\n    kubectl -n data get bk\n\nThe apiVersion of a custom resource is `<group>/<version>` from the CRD; `kubectl api-resources` lists the version and short names.",
+      "references": [
+        {
+          "title": "Custom Resources",
+          "url": "https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/"
+        },
+        {
+          "title": "Extend the Kubernetes API with CustomResourceDefinitions",
+          "url": "https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "hostFile",
+          "host": "ckad-base",
+          "path": "/opt/answers/backup-shortname.txt",
+          "equals": "bk",
+          "hint": "/opt/answers/backup-shortname.txt must contain the short name bk"
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "backups.data.mockctl.io",
+          "namespace": "data",
+          "name": "nightly",
+          "hint": "Backup nightly in data: source pvc/data-pvc, schedule \"0 2 * * *\", retentionDays 7",
+          "assert": {
+            "spec.source": "pvc/data-pvc",
+            "spec.schedule": "0 2 * * *",
+            "spec.retentionDays": 7
+          }
+        }
+      ]
+    },
+    {
+      "title": "ConfigMap file and Secret environment",
+      "domain": "Application Environment, Configuration and Security",
+      "weight": 7,
+      "context": "ckad",
+      "text": "In namespace `config`:\n\n- create ConfigMap `app-props` from the file `~/config/app.properties` on the base host (the key must be the file name, `app.properties`)\n- create Secret `app-creds` with keys `username=admin` and `password=S3cure!`\n- create Deployment `app` (1 replica, image `nginx:1.27`) that mounts the ConfigMap read-only at `/etc/app` and exposes the Secret keys as environment variables `APP_USER` (from `username`) and `APP_PASS` (from `password`)",
+      "solution": "    kubectl -n config create configmap app-props --from-file=/home/candidate/config/app.properties\n    kubectl -n config create secret generic app-creds --from-literal=username=admin --from-literal='password=S3cure!'\n    kubectl -n config create deployment app --image=nginx:1.27 $do > app.yaml\n    vim app.yaml\n\n    # pod template spec:\n        volumes:\n        - name: props\n          configMap:\n            name: app-props\n        containers:\n        - name: nginx\n          image: nginx:1.27\n          volumeMounts:\n          - name: props\n            mountPath: /etc/app\n            readOnly: true\n          env:\n          - name: APP_USER\n            valueFrom:\n              secretKeyRef:\n                name: app-creds\n                key: username\n          - name: APP_PASS\n            valueFrom:\n              secretKeyRef:\n                name: app-creds\n                key: password\n\n    kubectl apply -f app.yaml\n    kubectl -n config exec deploy/app -- cat /etc/app/app.properties\n\nQuote the password: `!` is special to the shell. `--from-file=<path>` uses the file name as the key; `--from-file=key=<path>` picks another.",
+      "references": [
+        {
+          "title": "Configure a Pod to Use a ConfigMap",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/"
+        },
+        {
+          "title": "Distribute Credentials Securely Using Secrets",
+          "url": "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "cm",
+          "namespace": "config",
+          "name": "app-props",
+          "hint": "configmap app-props must hold the file under key app.properties",
+          "assert": {
+            "data.app\\.properties": {
+              "contains": "mode=production"
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "secret",
+          "namespace": "config",
+          "name": "app-creds",
+          "hint": "secret app-creds must hold username=admin and password=S3cure!",
+          "assert": {
+            "data.username": "YWRtaW4=",
+            "data.password": "UzNjdXJlIQ=="
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "config",
+          "name": "app",
+          "hint": "deployment app must mount configmap app-props at /etc/app",
+          "assert": {
+            "spec.template.spec.containers[0].image": "nginx:1.27",
+            "spec.template.spec.volumes": {
+              "anyMatch": {
+                "configMap.name": "app-props"
+              }
+            },
+            "spec.template.spec.containers[0].volumeMounts": {
+              "anyMatch": {
+                "mountPath": "/etc/app"
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "config",
+          "name": "app",
+          "hint": "container env APP_USER and APP_PASS must come from secret app-creds (keys username / password)",
+          "assert": {
+            "spec.template.spec.containers[0].env": {
+              "anyMatch": {
+                "name": "APP_USER",
+                "valueFrom.secretKeyRef.name": "app-creds",
+                "valueFrom.secretKeyRef.key": "username"
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "config",
+          "name": "app",
+          "hint": "container env APP_PASS must come from secret app-creds key password",
+          "assert": {
+            "spec.template.spec.containers[0].env": {
+              "anyMatch": {
+                "name": "APP_PASS",
+                "valueFrom.secretKeyRef.name": "app-creds",
+                "valueFrom.secretKeyRef.key": "password"
+              }
+            }
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "ckad",
+          "namespace": "config",
+          "name": "app",
+          "hint": "deployment app must be available"
+        }
+      ]
+    },
+    {
+      "title": "Resource requests, limits and a quota",
+      "domain": "Application Environment, Configuration and Security",
+      "weight": 6,
+      "context": "ckad",
+      "text": "Namespace `limited` has a ResourceQuota `compute-quota`. Inspect it, then create Deployment `worker` there with **2** replicas of `busybox:1.36` running `sleep 3600`, where each container requests `200m` CPU and `128Mi` memory and is limited to `500m` CPU and `256Mi` memory.\n\nBoth replicas must be running.",
+      "solution": "    kubectl -n limited describe quota compute-quota\n    kubectl -n limited create deployment worker --image=busybox:1.36 --replicas=2 $do -- sleep 3600 > worker.yaml\n    vim worker.yaml\n\n    # in the container:\n        resources:\n          requests:\n            cpu: 200m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n\n    kubectl apply -f worker.yaml\n    kubectl -n limited describe quota compute-quota    # Used column moves\n\nA namespace with a quota on `requests.*`/`limits.*` rejects pods that do not set them, so requests and limits are not optional here.",
+      "references": [
+        {
+          "title": "Resource Management for Pods and Containers",
+          "url": "https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/"
+        },
+        {
+          "title": "Resource Quotas",
+          "url": "https://kubernetes.io/docs/concepts/policy/resource-quotas/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "limited",
+          "name": "worker",
+          "hint": "deployment worker: 2 replicas, busybox:1.36, requests cpu 200m / memory 128Mi",
+          "assert": {
+            "spec.replicas": 2,
+            "spec.template.spec.containers[0].image": "busybox:1.36",
+            "spec.template.spec.containers[0].resources.requests.cpu": "200m",
+            "spec.template.spec.containers[0].resources.requests.memory": "128Mi"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "deploy",
+          "namespace": "limited",
+          "name": "worker",
+          "hint": "container limits must be cpu 500m / memory 256Mi",
+          "assert": {
+            "spec.template.spec.containers[0].resources.limits.cpu": "500m",
+            "spec.template.spec.containers[0].resources.limits.memory": "256Mi"
+          }
+        },
+        {
+          "type": "deploymentAvailable",
+          "cluster": "ckad",
+          "namespace": "limited",
+          "name": "worker",
+          "replicas": 2,
+          "hint": "deployment worker must have 2 available replicas"
+        }
+      ]
+    },
+    {
+      "title": "ServiceAccount, RBAC and security context",
+      "domain": "Application Environment, Configuration and Security",
+      "weight": 7,
+      "context": "ckad",
+      "text": "In namespace `secure`:\n\n1. Create ServiceAccount `app-sa`, a Role `configmap-reader` allowing only `get` and `list` on `configmaps`, and RoleBinding `app-sa-configmaps` binding the role to the ServiceAccount.\n2. Create Pod `secure-app` (image `busybox:1.36`, command `sleep 3600`) that runs as that ServiceAccount with a pod security context of `runAsUser: 1000`, `runAsGroup: 3000`, `fsGroup: 2000`, and a container security context that sets `allowPrivilegeEscalation: false` and drops **all** capabilities.",
+      "solution": "    kubectl -n secure create serviceaccount app-sa\n    kubectl -n secure create role configmap-reader --verb=get,list --resource=configmaps\n    kubectl -n secure create rolebinding app-sa-configmaps --role=configmap-reader --serviceaccount=secure:app-sa\n    kubectl auth can-i list configmaps -n secure --as=system:serviceaccount:secure:app-sa    # yes\n    kubectl auth can-i delete configmaps -n secure --as=system:serviceaccount:secure:app-sa  # no\n\n    apiVersion: v1\n    kind: Pod\n    metadata:\n      name: secure-app\n      namespace: secure\n    spec:\n      serviceAccountName: app-sa\n      securityContext:\n        runAsUser: 1000\n        runAsGroup: 3000\n        fsGroup: 2000\n      containers:\n      - name: app\n        image: busybox:1.36\n        command: [\"sleep\", \"3600\"]\n        securityContext:\n          allowPrivilegeEscalation: false\n          capabilities:\n            drop: [\"ALL\"]\n\n`runAsUser`/`runAsGroup`/`fsGroup` are valid at pod level; `allowPrivilegeEscalation` and `capabilities` only exist at container level.",
+      "references": [
+        {
+          "title": "Configure Service Accounts for Pods",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/"
+        },
+        {
+          "title": "Using RBAC Authorization",
+          "url": "https://kubernetes.io/docs/reference/access-authn-authz/rbac/"
+        },
+        {
+          "title": "Configure a Security Context for a Pod or Container",
+          "url": "https://kubernetes.io/docs/tasks/configure-pod-container/security-context/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "sa",
+          "namespace": "secure",
+          "name": "app-sa",
+          "hint": "serviceaccount app-sa must exist in secure"
+        },
+        {
+          "type": "canI",
+          "cluster": "ckad",
+          "namespace": "secure",
+          "as": "system:serviceaccount:secure:app-sa",
+          "verb": "list",
+          "resource": "configmaps",
+          "expect": true,
+          "hint": "app-sa must be able to list configmaps in secure (role configmap-reader + rolebinding app-sa-configmaps)"
+        },
+        {
+          "type": "canI",
+          "cluster": "ckad",
+          "namespace": "secure",
+          "as": "system:serviceaccount:secure:app-sa",
+          "verb": "delete",
+          "resource": "configmaps",
+          "expect": false,
+          "hint": "app-sa must not be able to delete configmaps"
+        },
+        {
+          "type": "canI",
+          "cluster": "ckad",
+          "namespace": "secure",
+          "as": "system:serviceaccount:secure:app-sa",
+          "verb": "get",
+          "resource": "secrets",
+          "expect": false,
+          "hint": "app-sa must not be able to read secrets"
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "rolebinding",
+          "namespace": "secure",
+          "name": "app-sa-configmaps",
+          "hint": "rolebinding app-sa-configmaps must bind role configmap-reader to serviceaccount app-sa",
+          "assert": {
+            "roleRef.name": "configmap-reader",
+            "subjects": {
+              "anyMatch": {
+                "kind": "ServiceAccount",
+                "name": "app-sa"
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "secure",
+          "name": "secure-app",
+          "hint": "pod secure-app must use serviceAccountName app-sa and pod securityContext runAsUser 1000 / runAsGroup 3000 / fsGroup 2000",
+          "assert": {
+            "spec.serviceAccountName": "app-sa",
+            "spec.securityContext.runAsUser": 1000,
+            "spec.securityContext.runAsGroup": 3000,
+            "spec.securityContext.fsGroup": 2000
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "pod",
+          "namespace": "secure",
+          "name": "secure-app",
+          "hint": "container securityContext must set allowPrivilegeEscalation false and drop ALL capabilities",
+          "assert": {
+            "spec.containers[0].securityContext.allowPrivilegeEscalation": false,
+            "spec.containers[0].securityContext.capabilities.drop": {
+              "contains": "ALL"
+            }
+          }
+        },
+        {
+          "type": "podsReady",
+          "cluster": "ckad",
+          "namespace": "secure",
+          "name": "secure-app",
+          "hint": "pod secure-app must be Running"
+        }
+      ]
+    },
+    {
+      "title": "Fix a Service and expose it on a node port",
+      "domain": "Services and Networking",
+      "weight": 6,
+      "context": "ckad",
+      "text": "In namespace `shop`, Service `cart` should route to the pods of Deployment `cart` on their container port `8080`, but it has no endpoints.\n\n1. Fix the Service so it selects the `cart` pods.\n2. Make it reachable from outside the cluster as a `NodePort` service on port **30080** (keep port 80 -> 8080).",
+      "solution": "    kubectl -n shop get endpoints cart                       # <none>\n    kubectl -n shop get pods -l app=cart --show-labels        # app=cart, tier=backend\n    kubectl -n shop get svc cart -o yaml                       # selector app: carts (typo)\n    kubectl -n shop edit svc cart\n      spec:\n        type: NodePort\n        selector:\n          app: cart\n        ports:\n        - port: 80\n          targetPort: 8080\n          nodePort: 30080\n    kubectl -n shop get endpoints cart\n\nCompare the Service selector with the pod labels first; that is where most \"no endpoints\" problems live. `nodePort` must be within 30000-32767.",
+      "references": [
+        {
+          "title": "Debug Services",
+          "url": "https://kubernetes.io/docs/tasks/debug/debug-application/debug-service/"
+        },
+        {
+          "title": "Service type NodePort",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "svc",
+          "namespace": "shop",
+          "name": "cart",
+          "hint": "service cart must select app=cart",
+          "assert": {
+            "spec.selector.app": "cart"
+          }
+        },
+        {
+          "type": "serviceEndpoints",
+          "cluster": "ckad",
+          "namespace": "shop",
+          "name": "cart",
+          "min": 1,
+          "hint": "service cart must have endpoints"
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "svc",
+          "namespace": "shop",
+          "name": "cart",
+          "hint": "service cart must be type NodePort with nodePort 30080, port 80 -> targetPort 8080",
+          "assert": {
+            "spec.type": "NodePort",
+            "spec.ports": {
+              "anyMatch": {
+                "port": 80,
+                "targetPort": 8080,
+                "nodePort": 30080
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "NetworkPolicy for the database",
+      "domain": "Services and Networking",
+      "weight": 7,
+      "context": "ckad",
+      "text": "In namespace `shop` the pods of Deployment `db` (label `app=db`) listen on TCP `5432`. Create a NetworkPolicy `db-allow-api` so that only pods labelled `app=api` in the same namespace can reach the `db` pods, and only on port 5432. All other ingress to `db` must be blocked; do not restrict egress.",
+      "solution": "    apiVersion: networking.k8s.io/v1\n    kind: NetworkPolicy\n    metadata:\n      name: db-allow-api\n      namespace: shop\n    spec:\n      podSelector:\n        matchLabels:\n          app: db\n      policyTypes:\n      - Ingress\n      ingress:\n      - from:\n        - podSelector:\n            matchLabels:\n              app: api\n        ports:\n        - protocol: TCP\n          port: 5432\n\n    kubectl apply -f netpol.yaml\n    kubectl -n shop exec deploy/api -- wget -qO- --timeout=2 db:5432   # allowed\n    kubectl -n shop exec deploy/web-stable -- wget -qO- --timeout=2 db:5432   # blocked\n\nListing `Ingress` in `policyTypes` with a single `from` rule denies every other source. A `podSelector` without a `namespaceSelector` matches pods in the policy's own namespace.",
+      "references": [
+        {
+          "title": "Network Policies",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/network-policies/"
+        },
+        {
+          "title": "Declare Network Policy",
+          "url": "https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "netpol",
+          "namespace": "shop",
+          "name": "db-allow-api",
+          "hint": "networkpolicy db-allow-api must select app=db and list Ingress in policyTypes",
+          "assert": {
+            "spec.podSelector.matchLabels.app": "db",
+            "spec.policyTypes": {
+              "contains": "Ingress"
+            }
+          }
+        },
+        {
+          "type": "connectivity",
+          "cluster": "ckad",
+          "from": {
+            "namespace": "shop",
+            "selector": "app=api"
+          },
+          "to": {
+            "namespace": "shop",
+            "selector": "app=db"
+          },
+          "port": 5432,
+          "expect": true,
+          "hint": "api pods must reach db on 5432"
+        },
+        {
+          "type": "connectivity",
+          "cluster": "ckad",
+          "from": {
+            "namespace": "shop",
+            "selector": "app=web"
+          },
+          "to": {
+            "namespace": "shop",
+            "selector": "app=db"
+          },
+          "port": 5432,
+          "expect": false,
+          "hint": "web pods must be blocked from db on 5432"
+        },
+        {
+          "type": "connectivity",
+          "cluster": "ckad",
+          "from": {
+            "namespace": "shop",
+            "selector": "app=api"
+          },
+          "to": {
+            "namespace": "shop",
+            "selector": "app=db"
+          },
+          "port": 80,
+          "expect": false,
+          "hint": "only port 5432 may be open on db, even for api pods"
+        }
+      ]
+    },
+    {
+      "title": "Ingress with two paths",
+      "domain": "Services and Networking",
+      "weight": 7,
+      "context": "ckad",
+      "text": "In namespace `shop` create an Ingress `shop-ingress` for host `shop.local` using ingress class `nginx`:\n\n- path `/cart` (Prefix) goes to Service `cart` port `80`\n- path `/` (Prefix) goes to Service `web` port `80`",
+      "solution": "    kubectl -n shop create ingress shop-ingress --class=nginx --rule=\"shop.local/cart*=cart:80\" --rule=\"shop.local/*=web:80\"\n    kubectl -n shop get ingress shop-ingress -o yaml\n\nEquivalent YAML:\n\n    apiVersion: networking.k8s.io/v1\n    kind: Ingress\n    metadata:\n      name: shop-ingress\n      namespace: shop\n    spec:\n      ingressClassName: nginx\n      rules:\n      - host: shop.local\n        http:\n          paths:\n          - path: /cart\n            pathType: Prefix\n            backend:\n              service:\n                name: cart\n                port:\n                  number: 80\n          - path: /\n            pathType: Prefix\n            backend:\n              service:\n                name: web\n                port:\n                  number: 80\n\nWith `kubectl create ingress`, a trailing `*` on the path means `Prefix`; without it the pathType is `Exact`.",
+      "references": [
+        {
+          "title": "Ingress",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/"
+        },
+        {
+          "title": "Ingress path types",
+          "url": "https://kubernetes.io/docs/concepts/services-networking/ingress/#path-types"
+        }
+      ],
+      "checks": [
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "ingress",
+          "namespace": "shop",
+          "name": "shop-ingress",
+          "hint": "ingress shop-ingress must use ingressClassName nginx and host shop.local",
+          "assert": {
+            "spec.ingressClassName": "nginx",
+            "spec.rules[0].host": "shop.local"
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "ingress",
+          "namespace": "shop",
+          "name": "shop-ingress",
+          "hint": "path /cart (Prefix) must route to service cart port 80",
+          "assert": {
+            "spec.rules[0].http.paths": {
+              "anyMatch": {
+                "path": "/cart",
+                "pathType": "Prefix",
+                "backend.service.name": "cart",
+                "backend.service.port.number": 80
+              }
+            }
+          }
+        },
+        {
+          "type": "resource",
+          "cluster": "ckad",
+          "kind": "ingress",
+          "namespace": "shop",
+          "name": "shop-ingress",
+          "hint": "path / (Prefix) must route to service web port 80",
+          "assert": {
+            "spec.rules[0].http.paths": {
+              "anyMatch": {
+                "path": "/",
+                "pathType": "Prefix",
+                "backend.service.name": "web",
+                "backend.service.port.number": 80
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

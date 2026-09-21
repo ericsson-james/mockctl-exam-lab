@@ -99,7 +99,7 @@ class Cluster {
     if (!obj || typeof obj !== 'object') throw new ApiError('BadRequest', 'object is not a valid Kubernetes resource');
     if (!obj.kind) throw new ApiError('BadRequest', 'Object \'Kind\' is missing');
     const entry = this.kinds.byKind(obj.kind, obj.apiVersion);
-    if (!entry) throw new ApiError('NotFound', 'the server could not find the requested resource (kind ' + obj.kind + ')');
+    if (!entry) throw new ApiError('NotFound', obj.apiVersion ? 'no matches for kind "' + obj.kind + '" in version "' + obj.apiVersion + '"' : 'the server could not find the requested resource (kind ' + obj.kind + ')');
     return entry;
   }
 

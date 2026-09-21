@@ -12,7 +12,7 @@ const src = (p) => readFileSync(join(root, 'src', p), 'utf8');
 
 const SITE_URL = 'https://mockctl.com';
 const TITLE = 'mockctl exam lab';
-const DESCRIPTION = 'Free, browser-only practice lab in the CKA and CKS exam format: simulated clusters, kubectl, node and security tooling, timed tasks with instant grading. No server, no account, no network calls. Unofficial; not affiliated with The Linux Foundation or CNCF.';
+const DESCRIPTION = 'Free, browser-only practice lab in the CKA, CKAD and CKS exam format: simulated clusters, kubectl, node and security tooling, timed tasks with instant grading. No server, no account, no network calls. Unofficial; not affiliated with The Linux Foundation or CNCF.';
 
 const JS_FILES = [
   'js/util.js',
@@ -45,6 +45,7 @@ const JS_FILES = [
   'js/commands/net.js',
   'js/commands/nodetools.js',
   'js/commands/security.js',
+  'js/commands/helm.js',
   'js/commands/sessioncmds.js',
   'js/commands/examcmd.js',
   'js/app.js',

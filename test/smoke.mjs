@@ -429,7 +429,7 @@ expect('exam 2 final grade', 'PASS — 100%', m);
 
 // ======================= exam 3 (CKS) =======================
 m = since();
-await type('exam switch 3');
+await type('exam switch "Unofficial CKS Practice Exam 1"');
 await type('y');
 await sleep(100);
 expect('exam 3 loaded', 'Unofficial CKS Practice Exam 1  (CKS, 17 questions', m);
@@ -641,7 +641,7 @@ expect('exam 3 final grade', 'PASS — 100%', m);
 
 // ======================= exam 4 (CKS 2) =======================
 m = since();
-await type('exam switch 4');
+await type('exam switch "Unofficial CKS Practice Exam 2"');
 await type('y');
 await sleep(100);
 expect('exam 4 loaded', 'Unofficial CKS Practice Exam 2  (CKS, 17 questions', m);
@@ -738,7 +738,7 @@ expect('exam 4 final grade', 'PASS — 100%', m);
 
 // ======================= exam 5 (CKS 3) =======================
 m = since();
-await type('exam switch 5');
+await type('exam switch "Unofficial CKS Practice Exam 3"');
 await type('y');
 await sleep(100);
 expect('exam 5 loaded', 'Unofficial CKS Practice Exam 3  (CKS, 17 questions', m);
@@ -825,6 +825,119 @@ for (let i = 1; i <= 17; i++) expect('exam5 Q' + i + ' pass', 'Question ' + i + 
 m = since();
 await type('exam end');
 expect('exam 5 final grade', 'PASS — 100%', m);
+
+
+// ================= exam 6: CKAD (helm, kustomize, probes, netpol, crd...) =================
+m = since();
+await type('exam switch "Unofficial CKAD Practice Exam 1"');
+await type('y');
+expect('exam 6 loaded', 'Unofficial CKAD Practice Exam 1  (CKAD, 18 questions', m);
+const world6 = app.world;
+const hostFs6 = (name, path, fn) => { const h = world6.hosts.get(name); const parts = path.split('/').filter(Boolean); const cur = h.fs.exists(parts, null) ? h.fs.readFile(parts, null) : ''; if (parts.length > 1) h.fs.mkdir(parts.slice(0, -1), null, { parents: true }); h.fs.writeFile(parts, fn(cur), null); };
+// seeded troubleshooting state
+m = since();
+await type('kubectl -n shop rollout history deploy orders');
+expect('orders has two revisions', '2       bump orders to nginx:1.99', m);
+m = since();
+await type('kubectl -n debug logs inventory');
+expect('inventory logs show the error', 'ERROR: DB_HOST is not set', m);
+m = since();
+await type('kubectl apply -f ~/legacy/api-deploy.yaml');
+expect('legacy manifest is rejected', 'no matches for kind "Deployment" in version "extensions/v1beta1"', m);
+// Q1 sidecar
+seedFile('logger.yaml', 'apiVersion: v1\nkind: Pod\nmetadata:\n  name: logger\n  namespace: pipeline\nspec:\n  volumes:\n  - name: logs\n    emptyDir: {}\n  containers:\n  - name: app\n    image: busybox:1.36\n    command: ["sh", "-c", "while true; do date >> /var/log/app/app.log; sleep 5; done"]\n    volumeMounts:\n    - name: logs\n      mountPath: /var/log/app\n  - name: log-shipper\n    image: busybox:1.36\n    command: ["sh", "-c", "tail -F /var/log/app/app.log"]\n    volumeMounts:\n    - name: logs\n      mountPath: /var/log/app\n');
+await type('kubectl apply -f logger.yaml');
+// Q2 cronjob + manual job
+seedFile('cleanup.yaml', 'apiVersion: batch/v1\nkind: CronJob\nmetadata:\n  name: cleanup\n  namespace: batch\nspec:\n  schedule: "*/10 * * * *"\n  concurrencyPolicy: Forbid\n  successfulJobsHistoryLimit: 2\n  failedJobsHistoryLimit: 1\n  jobTemplate:\n    spec:\n      template:\n        spec:\n          restartPolicy: OnFailure\n          containers:\n          - name: cleanup\n            image: busybox:1.36\n            command: ["sh", "-c", "echo cleaning; sleep 5"]\n');
+await type('kubectl apply -f cleanup.yaml');
+m = since();
+await type('kubectl -n batch create job cleanup-manual --from=cronjob/cleanup');
+expect('job from cronjob', 'job.batch/cleanup-manual created', m);
+// Q3 pvc + init container
+seedFile('webdata.yaml', 'apiVersion: v1\nkind: PersistentVolumeClaim\nmetadata:\n  name: data-pvc\n  namespace: storage\nspec:\n  accessModes: ["ReadWriteOnce"]\n  storageClassName: standard\n  resources:\n    requests:\n      storage: 1Gi\n---\napiVersion: v1\nkind: Pod\nmetadata:\n  name: web-data\n  namespace: storage\nspec:\n  volumes:\n  - name: data\n    persistentVolumeClaim:\n      claimName: data-pvc\n  initContainers:\n  - name: init-html\n    image: busybox:1.36\n    command: ["sh", "-c", "echo Hello from init > /work/index.html"]\n    volumeMounts:\n    - name: data\n      mountPath: /work\n  containers:\n  - name: web\n    image: nginx:1.27\n    volumeMounts:\n    - name: data\n      mountPath: /usr/share/nginx/html\n');
+await type('kubectl apply -f webdata.yaml');
+// Q4 parallel job
+seedFile('resize.yaml', 'apiVersion: batch/v1\nkind: Job\nmetadata:\n  name: image-resize\n  namespace: batch\nspec:\n  completions: 4\n  parallelism: 2\n  backoffLimit: 3\n  template:\n    spec:\n      restartPolicy: Never\n      containers:\n      - name: resize\n        image: busybox:1.36\n        command: ["sh", "-c", "echo resizing; sleep 3"]\n');
+await type('kubectl apply -f resize.yaml');
+// Q5 rolling update + rollback
+await type(`kubectl -n shop patch deployment api -p '{"spec":{"strategy":{"type":"RollingUpdate","rollingUpdate":{"maxSurge":1,"maxUnavailable":0}}}}'`);
+await type('kubectl -n shop set image deployment/api api=nginx:1.27');
+await type('kubectl -n shop annotate deployment api kubernetes.io/change-cause="upgrade api to nginx:1.27" --overwrite');
+m = since();
+await type('kubectl -n shop rollout undo deployment orders');
+expect('orders rolled back', 'deployment.apps/orders rolled back', m);
+// Q6 canary
+seedFile('canary.yaml', 'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: web-canary\n  namespace: shop\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: web\n      track: canary\n  template:\n    metadata:\n      labels:\n        app: web\n        track: canary\n    spec:\n      containers:\n      - name: web\n        image: nginx:1.27\n');
+await type('kubectl apply -f canary.yaml');
+// Q7 helm
+m = since();
+await type('helm repo add stable https://charts.mockctl.dev/stable');
+await type('helm install frontend stable/podinfo -n helm-apps --create-namespace --version 6.4.0 --set replicaCount=2');
+expect('helm install', 'STATUS: deployed', m);
+m = since();
+await type('helm upgrade frontend stable/podinfo -n helm-apps --version 6.5.1 --set replicaCount=2');
+expect('helm upgrade', 'Release "frontend" has been upgraded', m);
+m = since();
+await type('helm list -n helm-apps');
+expect('helm list shows 6.5.1', 'podinfo-6.5.1', m);
+// Q8 kustomize
+hostFs6('ckad-base', '/home/candidate/kustomize/overlays/prod/kustomization.yaml', () => 'resources:\n- ../../base\nnamespace: prod\nnamePrefix: prod-\ncommonLabels:\n  env: prod\nimages:\n- name: nginx\n  newTag: "1.27"\nreplicas:\n- name: catalog\n  count: 3\n');
+m = since();
+await type('kubectl apply -k ~/kustomize/overlays/prod');
+expect('kustomize apply', 'deployment.apps/prod-catalog created', m);
+// Q9 probes
+await type(`kubectl -n shop patch deployment payments -p '{"spec":{"template":{"spec":{"containers":[{"name":"payments","readinessProbe":{"httpGet":{"path":"/","port":80},"initialDelaySeconds":5,"periodSeconds":10},"livenessProbe":{"tcpSocket":{"port":80},"initialDelaySeconds":15,"periodSeconds":20}}]}}}}'`);
+// Q10 debug
+await type('kubectl -n debug logs inventory | grep ERROR > /opt/answers/inventory-error.txt');
+await type('kubectl -n debug delete pod inventory');
+seedFile('inventory.yaml', 'apiVersion: v1\nkind: Pod\nmetadata:\n  name: inventory\n  namespace: debug\n  labels:\n    app: inventory\nspec:\n  containers:\n  - name: inventory\n    image: busybox:1.36\n    command: ["sh", "-c", "echo starting; sleep 3600"]\n    env:\n    - name: DB_HOST\n      valueFrom:\n        configMapKeyRef:\n          name: inventory-config\n          key: DB_HOST\n');
+await type('kubectl apply -f inventory.yaml');
+// Q11 legacy api
+hostFs6('ckad-base', '/home/candidate/legacy/api-deploy.yaml', t => t.replace('extensions/v1beta1', 'apps/v1').replace('spec:\n  replicas: 2\n', 'spec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: legacy-api\n'));
+m = since();
+await type('kubectl apply -f ~/legacy/api-deploy.yaml');
+expect('legacy manifest applies after the fix', 'deployment.apps/legacy-api created', m);
+await type('echo apps/v1 > /opt/answers/legacy-api-version.txt');
+// Q12 crd
+m = since();
+await type('kubectl get crd backups.data.mockctl.io -o jsonpath="{.spec.names.shortNames[0]}"');
+expect('crd short name', 'bk', m);
+await type('echo bk > /opt/answers/backup-shortname.txt');
+seedFile('backup.yaml', 'apiVersion: data.mockctl.io/v1\nkind: Backup\nmetadata:\n  name: nightly\n  namespace: data\nspec:\n  source: pvc/data-pvc\n  schedule: "0 2 * * *"\n  retentionDays: 7\n');
+m = since();
+await type('kubectl apply -f backup.yaml');
+expect('custom resource created', 'backup.data.mockctl.io/nightly created', m);
+// Q13 configmap + secret
+await type('kubectl -n config create configmap app-props --from-file=/home/candidate/config/app.properties');
+await type(`kubectl -n config create secret generic app-creds --from-literal=username=admin --from-literal='password=S3cure!'`);
+seedFile('app.yaml', 'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: app\n  namespace: config\nspec:\n  replicas: 1\n  selector:\n    matchLabels:\n      app: app\n  template:\n    metadata:\n      labels:\n        app: app\n    spec:\n      volumes:\n      - name: props\n        configMap:\n          name: app-props\n      containers:\n      - name: nginx\n        image: nginx:1.27\n        volumeMounts:\n        - name: props\n          mountPath: /etc/app\n          readOnly: true\n        env:\n        - name: APP_USER\n          valueFrom:\n            secretKeyRef:\n              name: app-creds\n              key: username\n        - name: APP_PASS\n          valueFrom:\n            secretKeyRef:\n              name: app-creds\n              key: password\n');
+await type('kubectl apply -f app.yaml');
+// Q14 requests/limits
+seedFile('worker.yaml', 'apiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: worker\n  namespace: limited\nspec:\n  replicas: 2\n  selector:\n    matchLabels:\n      app: worker\n  template:\n    metadata:\n      labels:\n        app: worker\n    spec:\n      containers:\n      - name: worker\n        image: busybox:1.36\n        command: ["sleep", "3600"]\n        resources:\n          requests:\n            cpu: 200m\n            memory: 128Mi\n          limits:\n            cpu: 500m\n            memory: 256Mi\n');
+await type('kubectl apply -f worker.yaml');
+// Q15 sa + rbac + securityContext
+await type('kubectl -n secure create serviceaccount app-sa');
+await type('kubectl -n secure create role configmap-reader --verb=get,list --resource=configmaps');
+await type('kubectl -n secure create rolebinding app-sa-configmaps --role=configmap-reader --serviceaccount=secure:app-sa');
+seedFile('secure-app.yaml', 'apiVersion: v1\nkind: Pod\nmetadata:\n  name: secure-app\n  namespace: secure\nspec:\n  serviceAccountName: app-sa\n  securityContext:\n    runAsUser: 1000\n    runAsGroup: 3000\n    fsGroup: 2000\n  containers:\n  - name: app\n    image: busybox:1.36\n    command: ["sleep", "3600"]\n    securityContext:\n      allowPrivilegeEscalation: false\n      capabilities:\n        drop: ["ALL"]\n');
+await type('kubectl apply -f secure-app.yaml');
+// Q16 service fix + nodeport
+await type(`kubectl -n shop patch svc cart -p '{"spec":{"type":"NodePort","selector":{"app":"cart"},"ports":[{"port":80,"targetPort":8080,"nodePort":30080}]}}'`);
+// Q17 network policy
+seedFile('netpol.yaml', 'apiVersion: networking.k8s.io/v1\nkind: NetworkPolicy\nmetadata:\n  name: db-allow-api\n  namespace: shop\nspec:\n  podSelector:\n    matchLabels:\n      app: db\n  policyTypes:\n  - Ingress\n  ingress:\n  - from:\n    - podSelector:\n        matchLabels:\n          app: api\n    ports:\n    - protocol: TCP\n      port: 5432\n');
+await type('kubectl apply -f netpol.yaml');
+// Q18 ingress
+m = since();
+await type('kubectl -n shop create ingress shop-ingress --class=nginx --rule="shop.local/cart*=cart:80" --rule="shop.local/*=web:80"');
+expect('ingress created', 'ingress.networking.k8s.io/shop-ingress created', m);
+// jobs need a couple of run cycles (4 completions, 2 at a time)
+await sleep(16000);
+m = since();
+await type('exam check');
+for (let i = 1; i <= 18; i++) expect('exam6 Q' + i + ' pass', 'Question ' + i + ': PASS', m);
+m = since();
+await type('exam end');
+expect('exam 6 final grade', 'PASS — 100%', m);
 
 console.log(failures ? '\n' + failures + ' FAILURES' : '\nall checks passed');
 process.exit(failures ? 1 : 0);

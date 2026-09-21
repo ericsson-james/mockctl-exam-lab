@@ -72,11 +72,15 @@ class KindRegistry {
     return matches[0];
   }
 
+  /* A wrong apiVersion (extensions/v1beta1, apps/v1beta2...) resolves to nothing,
+     the way the real API server has no mapping for it. */
   byKind(kind, apiVersion) {
     const cands = this.kinds.filter(k => k.kind === kind);
-    if (cands.length <= 1 || !apiVersion) return cands[0] || null;
+    if (!cands.length) return null;
+    if (!apiVersion) return cands[0];
     const group = apiVersion.includes('/') ? apiVersion.split('/')[0] : '';
-    return cands.find(k => k.group === group) || cands[0];
+    const version = apiVersion.split('/').pop();
+    return cands.find(k => k.group === group && k.version === version) || null;
   }
 
   /* kubectl's "deployment.apps/name" style. */

@@ -295,3 +295,19 @@ Checks.register('hostSysctl', (world, spec) => {
   const v = host.sysctl[spec.key];
   return { pass: v !== undefined && String(v) === String(spec.value), detail: spec.key + ' is ' + (v === undefined ? 'unset' : v) + ' on ' + spec.host + ', expected ' + spec.value };
 });
+
+/* Helm release state kept by commands/helm.js: { namespace, name, chart, version, revision, minRevision, status, values: {path: expectation} } */
+Checks.register('helmRelease', (world, spec) => {
+  const cluster = Checks.cluster(world, spec);
+  const ns = spec.namespace || 'default';
+  const rel = cluster.helm && cluster.helm.releases.get(ns + '/' + spec.name);
+  if (!rel) return { pass: spec.exists === false, detail: spec.exists === false ? '' : 'helm release ' + spec.name + ' not found in namespace ' + ns };
+  if (spec.exists === false) return { pass: false, detail: 'helm release ' + spec.name + ' still exists in namespace ' + ns };
+  if (spec.chart && rel.chart !== spec.chart) return { pass: false, detail: 'release ' + spec.name + ' uses chart ' + rel.chart + ', expected ' + spec.chart };
+  if (spec.version && rel.chartVersion !== spec.version) return { pass: false, detail: 'release ' + spec.name + ' is at chart version ' + rel.chartVersion + ', expected ' + spec.version };
+  if (spec.revision !== undefined && rel.revision !== spec.revision) return { pass: false, detail: 'release ' + spec.name + ' is at revision ' + rel.revision + ', expected ' + spec.revision };
+  if (spec.minRevision !== undefined && rel.revision < spec.minRevision) return { pass: false, detail: 'release ' + spec.name + ' is at revision ' + rel.revision + ', expected at least ' + spec.minRevision };
+  if (spec.status && rel.status !== spec.status) return { pass: false, detail: 'release ' + spec.name + ' is ' + rel.status + ', expected ' + spec.status };
+  if (spec.values) { const failed = Checks.assertAll(rel.merged || {}, spec.values); if (failed.length) return { pass: false, detail: 'values: ' + failed.join('; ') }; }
+  return { pass: true };
+});
